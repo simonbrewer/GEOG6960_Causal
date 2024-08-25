@@ -1,0 +1,780 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 2"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 440 5th Ave N
+        city: Salt Lake City
+        state: UT
+        postal-code: 98109-4631
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(1242)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to explore what a randomized control trial (RCT) looks like, and the use of propensity score matching to *replicate* the type of randomization seen in RCTs.
+
+As a reminder, the goal of causal inference is to remove any bias related to the *treatment*: the covariate we are interested in. This is usually expressed as a *confounder* : one or more additional covariates ($X$) that affect both the treatment ($T$) and the outcome ($Y$). RCTs avoid this problem by trying to ensure that the assignation of $T$ is random relative to $X$. If this is true, then the causal effect (the thing we're actually interested in) can usually be estimated using simple statistics ($t$-tests, linear models).
+
+## Packages
+
+::: {.panel-tabset group="language"}
+# R
+
+We'll be using the following R packages, so make sure they are installed and then load them:
+
+```{r}
+#| output: false
+library(tidyverse)
+library(ggpubr)
+library(MatchIt)
+```
+
+# Python
+
+We'll be using the following Python packages, so install these using your favorite package manage (pip, conda) and import them:
+
+```{python}
+import random
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+```
+:::
+
+## Simulating data
+
+First, we're going to create a synthetic dataset for use in the lab. Simulating these types of data can be very useful in understanding how models work, and we'll use it here to illustrate the difference between a randomized trial and a trial where the treatment ($T$) is biased. This is particularly useful for causal inference as simulating data allows us to see both the factual (observed) and counterfactual (unobserved) outcomes.
+
+We're going to use the same example shown in the lectures: a study aiming to estimate the effect of computer tablets ($T$) on student test outcomes ($Y$). The confounding variable ($X$) is the school tuition, taken as a proxy for school wealth. One twist here is that we want to assign tablets by school, not by student, which makes this slightly more complicated.
+
+Before we start, we need to decide some values for the data. You're very welcome to change these to different values, but I'd suggest first running this with the values given here, then going back to see how changing these affects your results.
+
+We'll start by setting the random seed (to ensure we get the same results). Again, feel free to change this, but your results will differ slightly from those in this document:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+set.seed(1242)
+```
+# Python
+```{python}
+np.random.seed(42)
+```
+:::
+
+
+Next, let's define the number of observations:
+
+-   Number of schools: 50
+-   Number of students per school: 20
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+n_schools = 50
+class_size = 20
+n_students = n_schools * class_size
+```
+# Python
+```{python}
+n_schools = 50
+class_size = 20
+n_students = n_schools * class_size
+```
+:::
+
+### Schools
+
+We'll assign the tuition levels randomly from a normal distribution with a mean of 1000 and s.d. of 300:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+tuition = round(rnorm(n_schools, 1000, 300))
+```
+# Python
+```{python}
+tuition = np.round(np.random.normal(1000, 300, n_schools))
+```
+:::
+
+Now, we'll use the tuition to decide whether or not a school assigns tablets to students. We'll do this randomly, using a binomial distribution, where the probability of a school assign tablets is given by first converting the tuition to a $z$-score:
+
+$$
+\mbox{tuition}_z = (\mbox{tuition} - mean(\mbox{tuition}) / sd(\mbox{tuition})
+$$
+
+Then we get $p$ for each school as:
+
+$$ 
+p_\mbox{tablet} = exp(\mbox{tuition}_z) / (1 + exp(\mbox{tuition}_z))
+$$
+
+Putting this into practice:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+tuition_z = (tuition - mean(tuition)) / sd(tuition)
+tuition_p = exp(tuition_z)/(1+exp(tuition_z))
+tablet = rbinom(n_schools, 1, tuition_p)
+```
+
+Let's put all of this into a data frame:
+
+```{r}
+school_df = data.frame(id = as.factor(1:length(tablet)), 
+                       tuition = tuition, 
+                       tuition_p = tuition_p,
+                       tablet = as.factor(tablet))
+```
+
+# Python
+```{python}
+tuition_z = (tuition - tuition.mean()) / tuition.std()
+tuition_p = np.exp(tuition_z)/(1+np.exp(tuition_z))
+tablet = np.random.binomial(1, tuition_p, n_schools)
+```
+Let's put all of this into a data frame:
+
+```{python}
+school_df = pd.DataFrame({'id': np.arange(n_schools), 
+                          'tuition': tuition,
+                          'tablet': tablet})
+```
+:::
+
+And we can now visualize some of the results (this is a good way to check that we get what we expect):
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggbarplot(school_df, x = "id", y = "tuition",
+          fill = "tablet",
+          palette = "jco",
+          sort.val = "asc",
+          sort.by.groups = FALSE,
+          x.text.angle = 45)
+```
+
+```{r}
+ggboxplot(school_df, x = "tablet", y = "tuition") +
+  theme(legend.position="none") 
+```
+
+# Python
+```{python}
+sns.barplot(school_df, x="id", y="tuition", 
+            hue="tablet", order=school_df.sort_values('tuition').id)
+```
+
+
+```{python}
+sns.boxplot(school_df, x="tablet", y="tuition", hue="tablet")
+```
+:::
+
+We can also test for differences in the tuition rates based on whether or not tablets were assigned:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+t.test(tuition ~ tablet, school_df)
+```
+
+# Python
+```{python}
+from statsmodels.stats.weightstats import ttest_ind
+t_stat, p_value, df = ttest_ind(school_df[school_df['tablet'] == 1]['tuition'], 
+                                school_df[school_df['tablet'] == 0]['tuition'])
+print(f'T: {t_stat}; p-value: {p_value}')
+```
+:::
+
+### Students
+
+Now we'll create `class_size` students for each school. We first make a data frame of students, by simply repeating the school values for `tuition` and `tablet`:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+student_df = data.frame(id = 1:(n_students),
+                        school_id = rep(school_df$id, each = class_size),
+                        tuition = rep(tuition, each = class_size),
+                        tablet = factor(rep(tablet, each = class_size)))
+```
+
+# Python
+```{python}
+student_df = pd.DataFrame({'id': np.arange(n_students),
+                           'school_id': np.repeat(school_df['id'], class_size),
+                           'tuition': np.repeat(school_df['tuition'], class_size),
+                           'tablet': np.repeat(school_df['tablet'], class_size)})
+```
+:::
+
+Now we'll create a test score for each student. This will again be random, but based on the tuition values of the school (to reflect that we expect students at higher funded schools to test better). Student scores will be taken from a random normal distribution with a s.d. of 200 and the mean given by $200 + 0.7 \times \mbox{tuition}$. We'll then rescale the scores so that the maximum is 1000.
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+student_df$enem_score0 = rnorm(n_students, 200 +
+                                0.7 * student_df$tuition, 200) 
+student_df$enem_score0 =
+  (student_df$enem_score0 - min(student_df$enem_score0)) /
+  max(student_df$enem_score0) * 1000
+```
+
+# Python
+```{python}
+student_df['enem_score0'] = np.random.normal(200 + 0.7 * student_df['tuition'], 200, n_students) 
+
+student_df['enem_score0'] = (student_df['enem_score0'] - student_df['enem_score0'].min()) / student_df['enem_score0'].max() * 1000.0
+```
+:::
+
+Note that this score (`enem_score0`) is the *factual* for students who were not assigned a tablet, and the *counterfactual* for students who were.
+
+Finally, we'll add a tablet *effect*. This is the expected change in a student's score if they were assigned a tablet. For this exercise, we'll assume that having a tablet reduces scores by 50 points on average, but with a s.d. of 5.
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+student_df$tablet_eff = rnorm(n_students, -50, 5)
+gghistogram(student_df, x = "tablet_eff")
+```
+# Python
+```{python}
+student_df['tablet_eff'] = np.random.normal(-50, 5, n_students)
+sns.histplot(student_df, x = "tablet_eff")
+```
+:::
+
+Finally, add the tablet effect back to the score. We multiply by the binary `tablet` assignation.
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+student_df$enem_score1 = student_df$enem_score0 + 
+  student_df$tablet_eff * as.numeric(student_df$tablet)-1
+ggboxplot(student_df, 
+          x = "tablet", 
+          y = "enem_score1", 
+          fill = "tablet",
+          palette = "jco")
+```
+
+# Python
+```{python}
+student_df['enem_score1'] = student_df['enem_score0'] + student_df['tablet_eff'] * student_df['tablet']
+
+sns.boxplot(student_df, x = "tablet", y = "enem_score1", 
+          hue = "tablet")
+```
+:::
+
+## First test
+
+With the data in had, we can test for the causal effect of `tablet` on the observed scores `enem_score1`. Before running this, just a reminder of two points. Given the way we have created the data set, we know this is expected to be negative and around -50. But we also know that there is a bias in the tablet assignment from the tuition rates.
+
+As the test scores are normally distributed, and we have two groups (treated and control), we can use a $t$-test to explore the differences (as shown above). More usefully, we replace this with a linear model (`lm` in R or `statsmodels.OLS` in Python), as this will allow us to test for significance and give us an estimate of the effect in the coefficient $\beta_1$:
+
+$$
+\mbox{enem\_score} = \beta_0 + \beta_1 \times \mbox{tablet}
+$$
+
+(As an aside, while they are often taught separately, most statistical tests are just special cases of the linear model...)
+
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+#| output: false
+#| echo: false
+fit = summary(lm(enem_score1 ~ tablet, student_df))
+```
+
+```{r}
+summary(lm(enem_score1 ~ tablet, student_df))
+```
+
+Which gives us a highly significant effect of `r round(fit$coefficients['tablet1','Estimate'],2)`. Now you should be able to see the impact of the tuition bias: we expected an effect of around -50 and we got `r round(fit$coefficients['tablet1','Estimate'],2)` instead.
+
+# Python
+```{python}
+mod = smf.ols(formula='enem_score1 ~ tablet', data=student_df)
+fit = mod.fit()
+print(fit.summary())
+```
+:::
+
+
+You can also see this effect if you plot the test scores against tuition:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+ggscatter(student_df, 
+          x = "tuition", 
+          y = "enem_score1", 
+          col = "tablet",
+          palette = "jco")
+```
+# Python
+```{python}
+sns.scatterplot(student_df, 
+          x = "tuition", 
+          y = "enem_score1", 
+          hue = "tablet")
+```
+:::
+
+Where you'll see both the influence of tuition and the asymmetric distribution of tablets.
+
+## Randomized trial
+
+We'll now repeat this test, but by simulating a random trial of tablets across schools. To keep this comparable to the previous (biased) example, we'll work with the same data. First we assign tablets randomly
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+school_df$tablet_rct = as.factor(sample(rep(c(0,1), n_schools/2)))
+
+ggbarplot(school_df, x = "id", y = "tuition",
+          fill = "tablet_rct",
+          palette = "jco",
+          sort.val = "asc",
+          sort.by.groups = FALSE,
+          x.text.angle = 45) 
+```
+
+# Python
+```{python}
+school_df['tablet_rct'] = school_df['tablet'].sample(n_schools).to_numpy()
+
+sns.barplot(school_df, x="id", y="tuition", 
+            hue="tablet_rct", order=school_df.sort_values('tuition').id)
+```
+:::
+
+Next we create a new set of test scores by updating the original scores (`enem_score0`) with tablet effect multiplied by the new tablet assignment. If we then repeat the scatter plot using the new scores and tablet assignments, you should see a more even distribution: 
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+student_df$tablet_rct = rep(school_df$tablet_rct, each = class_size)
+student_df$enem_score2 = student_df$enem_score0 + 
+  student_df$tablet_eff * as.numeric(student_df$tablet_rct)-1
+
+ggscatter(student_df, 
+          x = "tuition", 
+          y = "enem_score2", 
+          col = "tablet_rct",
+          palette = "jco")
+```
+
+```{r}
+#| output: false
+#| echo: false
+fit <- summary(lm(enem_score2 ~ tablet_rct, student_df))
+```
+
+And now if we repeat our linear model, we get an effect that is much closer to the expected value of -50.
+
+```{r}
+summary(lm(enem_score2 ~ tablet_rct, student_df))
+```
+
+# Python
+```{python}
+student_df['tablet_rct'] = np.repeat(school_df['tablet_rct'], class_size)
+student_df['enem_score2'] = student_df['enem_score0'] + student_df['tablet_eff'] * student_df['tablet_rct']
+
+sns.scatterplot(student_df, 
+          x = "tuition", 
+          y = "enem_score2", 
+          hue = "tablet_rct")
+```
+
+And now if we repeat our linear model, we get an effect that is much closer to the expected value of -50.
+
+```{python}
+mod = smf.ols(formula='enem_score2 ~ tablet_rct', data=student_df)
+fit = mod.fit()
+print(fit.summary())
+```
+:::
+
+
+## Propensity score matching
+
+In the previous sections, we looked at the effect of having a randomized or biased design in our data, and how this can impact the conclusions that we draw. But what do you do when you don't have a randomized trial? In a lot of situations, we have natural experiments; where 'treatments' have taken place for other reasons than our tests. This is the case with the first set of test scores - these were created to mimic a natural experiment where schools had decided themselves (and partly based on finances) whether or not to give students tablets. In this case, we can use propensity score matching to try and reduce any biases.
+
+The aim here is to create a subset of data with matched treated and control samples, where the confounding variables (e.g. tuition) are used to make the matches. The idea being that if we have treatments and controls for similar tuition levels, then the remaining difference in test scores should be due to the effect of the treatment (the tablets in our example).
+
+Here, we'll look briefly at how propensity scores are calculated, then use an add-on package to calculate these for our dataset. Finally, we'll re-run our model to test for tablet-related test score differences with the new, matched set.
+
+Let's remind ourselves of the data we have available:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+head(school_df)
+```
+
+```{r}
+head(student_df)
+```
+
+# Python
+```{python}
+school_df.head()
+```
+
+```{python}
+student_df.head()
+```
+:::
+
+Although we are testing for the differences in students, the assignment (and therefore propensity) needs to be calculated for the schools, so we'll use `schools_df` for the next steps. Note that propensity score usually works best with larger datasets, and is somewhat limited with only 50 samples.
+
+Propensity scores are simply the probability that a given observation was selected for the treatment. **The important part is that we want to estimate these probabilities using the same covariate(s) that we think (or know) caused the bias in the treatment.** We'll estimate this here using binomial regression in a generalized linear model, but note you can use any model that works with a binary outcome (random forests, boosted trees, etc).
+
+::: {.panel-tabset group="language"}
+# R
+In R, we can fit this model using `glm` and by setting the `family` to `binomial`:
+
+```{r}
+fit_ps <- glm(tablet ~ tuition, school_df, family = binomial())
+summary(fit_ps)
+```
+
+We can now extract the estimated propensity scores into a new data.frame
+
+```{r}
+prs_df <- data.frame(prop_score = predict(fit_ps, type = "response"),
+                     tablet = as.numeric(fit_ps$model$tablet)-1,
+                     tuition = fit_ps$model$tuition)
+head(prs_df)
+```
+
+# Python
+In Python, we can fit this model using the `glm` function from `statsmodels` and by setting the `family` to `binomial`:
+
+```{python}
+mod = smf.glm(formula='tablet ~ tuition', data=school_df, family=sm.families.Binomial())
+fit = mod.fit()
+print(fit.summary())
+```
+
+We can now extract the estimated propensity scores into a new data.frame
+
+```{python}
+prs_df = pd.DataFrame({'prop_score': fit.predict(),
+                        'tablet': school_df['tablet'],
+                        'tuition': school_df['tuition']})
+prs_df.head()
+```
+:::
+
+
+To illustrate how a simple match would happen, let's split this into a treatment and control data set:
+
+::: {.panel-tabset group="language"}
+# R
+```{r}
+treated_df = prs_df %>%
+  filter(tablet == 1)
+control_df = prs_df %>%
+  filter(tablet == 0)
+```
+
+Then, for the first sample, we can estimate the differences in propensity score and find the closest match:
+
+```{r}
+match_id = which.min(abs(treated_df$prop_score[1] - control_df$prop_score))
+match_id
+```
+
+And show the matching sample (the `tuition` should be similar to the first treated sample):
+
+```{r}
+control_df[match_id, ]
+```
+
+# Python
+```{python}
+treated_df = prs_df[prs_df['tablet'] == 1].reset_index()
+control_df = prs_df[prs_df['tablet'] == 0].reset_index()
+```
+
+Then, for the first sample, we can estimate the differences in propensity score and find the closest match:
+
+```{python}
+abs_diff = (treated_df['prop_score'][0] - control_df['prop_score']).abs()
+match_id = abs_diff.idxmin()
+print(match_id)
+```
+
+And show the matching sample (the `tuition` should be similar to the first treated sample):
+
+```{python}
+control_df.iloc[match_id,:]
+```
+:::
+
+We could obviously make this into a loop and get all the matches, but instead we'll use an external package to carry out the full match. 
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, the package we will use is called **MatchIt**. It is pretty well established and allows you to choose different method to calculate the scores and carry out matching.
+
+To get an idea of the output, we'll first run this with no matching (`method = NULL`). The output will show some summary statistics on the match between the treatment and control. The first line (`distance`) shows the difference in propensity score between the two groups and the second (and subsequent) line shows the difference in the covariate. A useful index is the standardized mean difference, which allows you to compare difference covariates (if you have them). The goal of matching will be to reduce this difference.
+
+```{r}
+match0 = matchit(tablet ~ tuition, data = school_df,
+                 method = NULL, distance = "glm")
+summary(match0)
+```
+
+Now, we'll re-run and use nearest neighbor matching to selected control schools.
+
+```{r}
+match1 = matchit(tablet ~ tuition, data = school_df,
+                 method = "nearest", distance = "glm")
+summary(match1, un = FALSE)
+```
+
+The results here are slightly worse (the std. differences have increased). This is due to the sequential nature of the method used, where the first treated sample is matched to the closest control. This control is then excluded from subsequent matches, even if they are better. We'll re-run using replacement matching (where each control can be matched to multiple treated samples):
+
+```{r}
+match1 = matchit(tablet ~ tuition, data = school_df,
+                 method = "nearest", distance = "glm", 
+                 replace = TRUE)
+summary(match1, un = FALSE)
+```
+
+Now we obtain a better match as shown by the decrease in std. differences. Note in the sample sizes that the total number of retained control samples is only 8, which is probably too low in practice.
+
+We can see the results of the match using the `plot()` function. For example, this shows the histograms of treated (top) and control (bottom), before (left) and after (right) matching.
+
+```{r}
+plot(match1, type = "hist", interactive = FALSE)
+```
+
+And this shows the same for the empirical cumulative distribution functions:
+
+```{r}
+plot(match1, type = "ecdf", interactive = FALSE)
+```
+
+We can now repeat our test for the effect of the tablets on test scores, but using the matched samples. As we've matched the schools, we now need to create a new dataset that includes only the students from these schools. First extract the match 'ids' (the rows from the original `school_df` data frame)
+
+```{r}
+match_df = get_matches(match1, id = "mid")
+```
+
+Now we can loop across these and create a new data frame by appending the students from each matched school in turn:
+
+```{r}
+match_student_df = NULL
+for (i in 1:nrow(match_df)) {
+  tmp_df = student_df %>%
+    filter(school_id == as.numeric(match_df$mid)[i])
+  match_student_df = rbind(match_student_df, tmp_df)
+}
+```
+
+And finally, we can repeat our test:
+
+```{r}
+summary(lm(enem_score1 ~ tablet, match_student_df))
+```
+
+Which shows a similar results to the simulated randomized control above, despite being based on the data set where we know tuition has biased the assignment of tablets!
+
+# Python
+
+In Python, the package we will use is called **psmpy**. It is a solid and fairly widely used package, but doesn't offer quite the same flexibility as R. The main function is `PsmPy`, and uses a similar format to SciKit-Learn, where methods are initialized then fit to the data. We need to specify:
+
+- The data frame holding the data
+- The `treatment` (this is the tablet variable)
+- A column with observation IDs (these will be used in matching)
+- Any varaibles that we want to exclude from the propensity score estimates
+
+```{python}
+from psmpy import PsmPy
+psm = PsmPy(school_df, treatment='tablet', indx='id', exclude = ['tablet_rct'])
+```
+
+Once we've set this up, we can calculate the propensity score using a binomial (logisitic) model as follows. THe resulting dataframe contains the propensity scores on both a probability and logit scale:
+
+```{python}
+psm.logistic_ps(balance = True)
+psm.predicted_data.head()
+```
+
+Once this is run, we can use the results to carry out nearest neighbor matching to selected control schools.
+
+```{python}
+psm.knn_matched(matcher='propensity_logit', replacement=False, caliper=None)
+```
+
+We can explore the matches. First, we can plot a histogram of the matched propensity scores. Ideally, these histograms would roughly match, but there is still quite a lot of visible differences
+
+```{python}
+psm.plot_match()
+```
+
+A useful index is the standardized mean difference (called the `effect_size`), which allows you to compare difference covariates (if you have them). The goal of matching will be to reduce this difference.
+
+```{python}
+psm.effect_size_plot()
+```
+
+```{python}
+psm.effect_size
+```
+
+This shows that we have reduced the difference (the after `effect_size` is lower), but it remains fairly high. This is due to the sequential nature of the method used, where the first treated sample is matched to the closest control. This control is then excluded from subsequent matches, even if they are better. We'll re-run using replacement matching (where each control can be matched to multiple treated samples):
+
+```{python}
+psm.knn_matched(matcher='propensity_logit', replacement=True, caliper=None)
+```
+
+```{python}
+psm.effect_size_plot()
+```
+
+Now we obtain a better match as shown by the decrease in effect size. Another useful diagnostic is to plot values of covariates for the matched treated and control samples as histograms:
+
+```{python}
+fig, axs = plt.subplots(ncols=2)
+sns.histplot(school_df, x="tuition", hue="tablet", binwidth=100, ax=axs[0]).set(title='Before')
+sns.histplot(psm.df_matched, x="tuition", hue="tablet", binwidth=100, ax=axs[1]).set(title='After')
+```
+
+Or as empirical cumulative distribution functions:
+
+```{python}
+fig, axs = plt.subplots(ncols=2)
+sns.ecdfplot(school_df, x = "tuition", hue="tablet", ax=axs[0]).set(title='Before')
+sns.ecdfplot(psm.df_matched, x = "tuition", hue="tablet", ax=axs[1]).set(title='After')
+```
+
+As these now align pretty well after the matching, we can now repeat our test for the effect of the tablets on test scores, but using the matched samples. As we've matched the schools, we now need to create a new dataset that includes only the students from these schools. 
+
+```{python}
+match_df = psm.df_matched
+matched_student_df = pd.DataFrame(columns=student_df.columns)
+for idx, row in match_df.iterrows():
+    #print(row['id'])
+    tmp_df = student_df[student_df['school_id'] == row['id']]
+    matched_student_df = pd.concat([matched_student_df, tmp_df], ignore_index = True)
+    
+matched_student_df.head()
+```
+
+```{python}
+mod = smf.ols(formula='enem_score1 ~ tablet', data=matched_student_df)
+fit = mod.fit()
+print(fit.summary())
+```
+
+Which shows a similar results to the simulated randomized control above, despite being based on the data set where we know tuition has biased the assignment of tablets!
+:::
+
+## Inverse propensity weighting
+
+An alternative approach to working with propensity scores is to use them directly in the test for the causal effect.
+
+The scores can be used as weights to indicate that some observations are more important than others for estimating the causal effect. For our example, students with a low likelihood of receiving a tablet who do get one have higher weights that students who follow expectations. Similarly, students with a high likelihood who do not recieve a tablet also get higher weights.
+
+Why does this work? When we have bias, it indicates that the treatment is not equally (or randomly) distributed across a covariate. This weighting has the effect of making this distribution more equal, removing (or at least reducing) the bias in any test.
+
+There are several ways to calculate these weights, but a simple one is:
+
+$$
+W_i = \frac{T_i}{p_i}+ \frac{1 - T_i}{1 - p_i}
+$$
+
+::: {.panel-tabset group="language"}
+# R
+In our example, we need to first calculate this for each school:
+
+```{r}
+prs_df <- prs_df %>%
+  mutate(ipw = (tablet / prop_score) + ((1 - tablet) / (1 - prop_score)))
+```
+
+Then assign the relevant weight to each student:
+
+```{r}
+student_df$ipw = rep(prs_df$ipw, each = class_size)
+```
+
+And finally, we can re-run the linear model with the weights incorporated (remember that the tablet effect was $\sim 50$:
+
+```{r}
+summary(lm(enem_score1 ~ tablet, 
+   data = student_df, 
+   weights = student_df$ipw))
+```
+
+And just as comparison, here are the unweighted results for the same data set
+
+```{r}
+summary(lm(enem_score1 ~ tablet, 
+   data = student_df))
+```
+
+# Python
+In our example, we need to first calculate this for each school:
+
+```{python}
+prs_df['ipw'] = (prs_df['tablet'] / prs_df['prop_score']) + ((1 - prs_df['tablet']) / (1 - prs_df['prop_score']))
+```
+
+Then assign the relevant weight to each student:
+
+```{python}
+student_df['ipw'] = np.repeat(prs_df['ipw'], class_size)
+```
+
+And finally, we can re-run the linear model with the weights incorporated (remember that the tablet effect was $\sim 50$:
+
+```{python}
+mod = smf.wls(formula='enem_score1 ~ tablet', data=student_df, weights=student_df['ipw'])
+fit = mod.fit()
+print(fit.summary())
+```
+
+And just as comparison, here are the unweighted results for the same data set
+
+```{python}
+mod = smf.ols(formula='enem_score1 ~ tablet', data=student_df)
+fit = mod.fit()
+print(fit.summary())
+```
+
+
+:::
