@@ -9,6 +9,7 @@ author:
         city: Salt Lake City
         state: UT
         postal-code: 98109-4631
+date: last-modified
 format:
   html:
     toc: true
@@ -735,7 +736,7 @@ print(fit.summary())
 Which shows a similar results to the simulated randomized control above, despite being based on the data set where we know tuition has biased the assignment of tablets!
 :::
 
-## Inverse propensity weighting
+## Inverse probability weighting
 
 An alternative approach to working with propensity scores is to use them directly in the test for the causal effect.
 
