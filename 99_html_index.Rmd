@@ -30,5 +30,5 @@ Often in scientific studies we are interested in establishing a cause and effect
 # Data
 
 No files yet - watch this space
-c
+
 [lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
