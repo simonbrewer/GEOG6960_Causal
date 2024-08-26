@@ -1,0 +1,34 @@
+---
+title: 'GEOG 6960 Causality in Geographic Studies'
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+author:
+  - Simon Brewer^[University of Utah, simon.brewer@ess.utah.edu]
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: false
+    toc: false
+    toc_float: false
+---
+
+# Introduction
+
+Often in scientific studies we are interested in establishing a cause and effect, e.g. what is the effect of some policy on health outcomes or the effect of anthropogenic activity on a changing climate. However, most statistical texts and courses are taught using correlative methods, with the mantra that “correlation is not causation” outside of certain strict experimental conditions. Recent work by Judea Pearl and others have developed a framework (Structural Causal Modeling) for causal inference that allows causality to be inferred even when these conditions are not met, allowing this approach in a much broader range of studies. In this seminar, we will review the history and concepts of causal analysis, and go through the steps of Pearl’s causal framework using a set of hands-on examples. The class will largely follow the outline of The Book of Why (Pearl and Mackenzie, 2018; Basic Books, NY). Students will develop their own analysis over the course of the semester through a series of discussions and presentations.
+
+# Classes
+
+- Week 1
+- Week 2
+    - [Lab notes][lab2]
+
+# Data
+
+No files yet - watch this space
+c
+[lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
