@@ -69,15 +69,17 @@ We'll start by setting the random seed (to ensure we get the same results). Agai
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 set.seed(1242)
 ```
+
 # Python
+
 ```{python}
 np.random.seed(42)
 ```
 :::
-
 
 Next, let's define the number of observations:
 
@@ -86,12 +88,15 @@ Next, let's define the number of observations:
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 n_schools = 50
 class_size = 20
 n_students = n_schools * class_size
 ```
+
 # Python
+
 ```{python}
 n_schools = 50
 class_size = 20
@@ -105,10 +110,13 @@ We'll assign the tuition levels randomly from a normal distribution with a mean 
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 tuition = round(rnorm(n_schools, 1000, 300))
 ```
+
 # Python
+
 ```{python}
 tuition = np.round(np.random.normal(1000, 300, n_schools))
 ```
@@ -147,11 +155,13 @@ school_df = data.frame(id = as.factor(1:length(tablet)),
 ```
 
 # Python
+
 ```{python}
 tuition_z = (tuition - tuition.mean()) / tuition.std()
 tuition_p = np.exp(tuition_z)/(1+np.exp(tuition_z))
 tablet = np.random.binomial(1, tuition_p, n_schools)
 ```
+
 Let's put all of this into a data frame:
 
 ```{python}
@@ -181,11 +191,11 @@ ggboxplot(school_df, x = "tablet", y = "tuition") +
 ```
 
 # Python
+
 ```{python}
 sns.barplot(school_df, x="id", y="tuition", 
             hue="tablet", order=school_df.sort_values('tuition').id)
 ```
-
 
 ```{python}
 sns.boxplot(school_df, x="tablet", y="tuition", hue="tablet")
@@ -196,11 +206,13 @@ We can also test for differences in the tuition rates based on whether or not ta
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 t.test(tuition ~ tablet, school_df)
 ```
 
 # Python
+
 ```{python}
 from statsmodels.stats.weightstats import ttest_ind
 t_stat, p_value, df = ttest_ind(school_df[school_df['tablet'] == 1]['tuition'], 
@@ -215,6 +227,7 @@ Now we'll create `class_size` students for each school. We first make a data fra
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 student_df = data.frame(id = 1:(n_students),
                         school_id = rep(school_df$id, each = class_size),
@@ -223,6 +236,7 @@ student_df = data.frame(id = 1:(n_students),
 ```
 
 # Python
+
 ```{python}
 student_df = pd.DataFrame({'id': np.arange(n_students),
                            'school_id': np.repeat(school_df['id'], class_size),
@@ -235,6 +249,7 @@ Now we'll create a test score for each student. This will again be random, but b
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 student_df$enem_score0 = rnorm(n_students, 200 +
                                 0.7 * student_df$tuition, 200) 
@@ -244,6 +259,7 @@ student_df$enem_score0 =
 ```
 
 # Python
+
 ```{python}
 student_df['enem_score0'] = np.random.normal(200 + 0.7 * student_df['tuition'], 200, n_students) 
 
@@ -257,11 +273,14 @@ Finally, we'll add a tablet *effect*. This is the expected change in a student's
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 student_df$tablet_eff = rnorm(n_students, -50, 5)
 gghistogram(student_df, x = "tablet_eff")
 ```
+
 # Python
+
 ```{python}
 student_df['tablet_eff'] = np.random.normal(-50, 5, n_students)
 sns.histplot(student_df, x = "tablet_eff")
@@ -272,6 +291,7 @@ Finally, add the tablet effect back to the score. We multiply by the binary `tab
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 student_df$enem_score1 = student_df$enem_score0 + 
   student_df$tablet_eff * as.numeric(student_df$tablet)-1
@@ -283,6 +303,7 @@ ggboxplot(student_df,
 ```
 
 # Python
+
 ```{python}
 student_df['enem_score1'] = student_df['enem_score0'] + student_df['tablet_eff'] * student_df['tablet']
 
@@ -303,9 +324,9 @@ $$
 
 (As an aside, while they are often taught separately, most statistical tests are just special cases of the linear model...)
 
-
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 #| output: false
 #| echo: false
@@ -319,6 +340,7 @@ summary(lm(enem_score1 ~ tablet, student_df))
 Which gives us a highly significant effect of `r round(fit$coefficients['tablet1','Estimate'],2)`. Now you should be able to see the impact of the tuition bias: we expected an effect of around -50 and we got `r round(fit$coefficients['tablet1','Estimate'],2)` instead.
 
 # Python
+
 ```{python}
 mod = smf.ols(formula='enem_score1 ~ tablet', data=student_df)
 fit = mod.fit()
@@ -326,11 +348,11 @@ print(fit.summary())
 ```
 :::
 
-
 You can also see this effect if you plot the test scores against tuition:
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 ggscatter(student_df, 
           x = "tuition", 
@@ -338,7 +360,9 @@ ggscatter(student_df,
           col = "tablet",
           palette = "jco")
 ```
+
 # Python
+
 ```{python}
 sns.scatterplot(student_df, 
           x = "tuition", 
@@ -355,6 +379,7 @@ We'll now repeat this test, but by simulating a random trial of tablets across s
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 school_df$tablet_rct = as.factor(sample(rep(c(0,1), n_schools/2)))
 
@@ -367,6 +392,7 @@ ggbarplot(school_df, x = "id", y = "tuition",
 ```
 
 # Python
+
 ```{python}
 school_df['tablet_rct'] = school_df['tablet'].sample(n_schools).to_numpy()
 
@@ -375,10 +401,11 @@ sns.barplot(school_df, x="id", y="tuition",
 ```
 :::
 
-Next we create a new set of test scores by updating the original scores (`enem_score0`) with tablet effect multiplied by the new tablet assignment. If we then repeat the scatter plot using the new scores and tablet assignments, you should see a more even distribution: 
+Next we create a new set of test scores by updating the original scores (`enem_score0`) with tablet effect multiplied by the new tablet assignment. If we then repeat the scatter plot using the new scores and tablet assignments, you should see a more even distribution:
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 student_df$tablet_rct = rep(school_df$tablet_rct, each = class_size)
 student_df$enem_score2 = student_df$enem_score0 + 
@@ -404,6 +431,7 @@ summary(lm(enem_score2 ~ tablet_rct, student_df))
 ```
 
 # Python
+
 ```{python}
 student_df['tablet_rct'] = np.repeat(school_df['tablet_rct'], class_size)
 student_df['enem_score2'] = student_df['enem_score0'] + student_df['tablet_eff'] * student_df['tablet_rct']
@@ -423,7 +451,6 @@ print(fit.summary())
 ```
 :::
 
-
 ## Propensity score matching
 
 In the previous sections, we looked at the effect of having a randomized or biased design in our data, and how this can impact the conclusions that we draw. But what do you do when you don't have a randomized trial? In a lot of situations, we have natural experiments; where 'treatments' have taken place for other reasons than our tests. This is the case with the first set of test scores - these were created to mimic a natural experiment where schools had decided themselves (and partly based on finances) whether or not to give students tablets. In this case, we can use propensity score matching to try and reduce any biases.
@@ -436,6 +463,7 @@ Let's remind ourselves of the data we have available:
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 head(school_df)
 ```
@@ -445,6 +473,7 @@ head(student_df)
 ```
 
 # Python
+
 ```{python}
 school_df.head()
 ```
@@ -460,6 +489,7 @@ Propensity scores are simply the probability that a given observation was select
 
 ::: {.panel-tabset group="language"}
 # R
+
 In R, we can fit this model using `glm` and by setting the `family` to `binomial`:
 
 ```{r}
@@ -477,6 +507,7 @@ head(prs_df)
 ```
 
 # Python
+
 In Python, we can fit this model using the `glm` function from `statsmodels` and by setting the `family` to `binomial`:
 
 ```{python}
@@ -495,11 +526,11 @@ prs_df.head()
 ```
 :::
 
-
 To illustrate how a simple match would happen, let's split this into a treatment and control data set:
 
 ::: {.panel-tabset group="language"}
 # R
+
 ```{r}
 treated_df = prs_df %>%
   filter(tablet == 1)
@@ -521,6 +552,7 @@ control_df[match_id, ]
 ```
 
 # Python
+
 ```{python}
 treated_df = prs_df[prs_df['tablet'] == 1].reset_index()
 control_df = prs_df[prs_df['tablet'] == 0].reset_index()
@@ -541,7 +573,7 @@ control_df.iloc[match_id,:]
 ```
 :::
 
-We could obviously make this into a loop and get all the matches, but instead we'll use an external package to carry out the full match. 
+We could obviously make this into a loop and get all the matches, but instead we'll use an external package to carry out the full match.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -616,10 +648,10 @@ Which shows a similar results to the simulated randomized control above, despite
 
 In Python, the package we will use is called **psmpy**. It is a solid and fairly widely used package, but doesn't offer quite the same flexibility as R. The main function is `PsmPy`, and uses a similar format to SciKit-Learn, where methods are initialized then fit to the data. We need to specify:
 
-- The data frame holding the data
-- The `treatment` (this is the tablet variable)
-- A column with observation IDs (these will be used in matching)
-- Any varaibles that we want to exclude from the propensity score estimates
+-   The data frame holding the data
+-   The `treatment` (this is the tablet variable)
+-   A column with observation IDs (these will be used in matching)
+-   Any varaibles that we want to exclude from the propensity score estimates
 
 ```{python}
 from psmpy import PsmPy
@@ -681,7 +713,7 @@ sns.ecdfplot(school_df, x = "tuition", hue="tablet", ax=axs[0]).set(title='Befor
 sns.ecdfplot(psm.df_matched, x = "tuition", hue="tablet", ax=axs[1]).set(title='After')
 ```
 
-As these now align pretty well after the matching, we can now repeat our test for the effect of the tablets on test scores, but using the matched samples. As we've matched the schools, we now need to create a new dataset that includes only the students from these schools. 
+As these now align pretty well after the matching, we can now repeat our test for the effect of the tablets on test scores, but using the matched samples. As we've matched the schools, we now need to create a new dataset that includes only the students from these schools.
 
 ```{python}
 match_df = psm.df_matched
@@ -719,6 +751,7 @@ $$
 
 ::: {.panel-tabset group="language"}
 # R
+
 In our example, we need to first calculate this for each school:
 
 ```{r}
@@ -748,6 +781,7 @@ summary(lm(enem_score1 ~ tablet,
 ```
 
 # Python
+
 In our example, we need to first calculate this for each school:
 
 ```{python}
@@ -775,6 +809,4 @@ mod = smf.ols(formula='enem_score1 ~ tablet', data=student_df)
 fit = mod.fit()
 print(fit.summary())
 ```
-
-
 :::
