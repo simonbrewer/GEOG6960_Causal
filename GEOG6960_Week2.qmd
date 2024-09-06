@@ -740,7 +740,7 @@ Which shows a similar results to the simulated randomized control above, despite
 
 An alternative approach to working with propensity scores is to use them directly in the test for the causal effect.
 
-The scores can be used as weights to indicate that some observations are more important than others for estimating the causal effect. For our example, students with a low likelihood of receiving a tablet who do get one have higher weights that students who follow expectations. Similarly, students with a high likelihood who do not recieve a tablet also get higher weights.
+The scores can be used as weights to indicate that some observations are more important than others for estimating the causal effect. For our example, students with a low likelihood of receiving a tablet who do get one have higher weights that students who follow expectations. Similarly, students with a high likelihood who do not receive a tablet also get higher weights.
 
 Why does this work? When we have bias, it indicates that the treatment is not equally (or randomly) distributed across a covariate. This weighting has the effect of making this distribution more equal, removing (or at least reducing) the bias in any test.
 
