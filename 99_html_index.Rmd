@@ -26,9 +26,12 @@ Often in scientific studies we are interested in establishing a cause and effect
 - Week 1
 - Week 2
     - [Lab notes][lab2]
+- Week 3
+    - [Lab notes][lab3]
 
 # Data
 
 No files yet - watch this space
 
 [lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
+[lab3]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week3.html
