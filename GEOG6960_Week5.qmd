@@ -1,0 +1,134 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 5"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 440 5th Ave N
+        city: Salt Lake City
+        state: UT
+        postal-code: 98109-4631
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to explore how to build and analyze directed acyclic graphs (DAGs) with DAGitty. We'll also briefly introduce R and Python packages that work with DAGs. This tutorial is lightly modified from the DAGitty tutorial located here.
+
+## Getting Started
+
+Go to Dagitty.net and click on "Launch DAGitty Online in your Browser". This will open the main DAGitty screen, with an example DAG. The screen is split into three panels:
+
+-   The left panel has options to modify the existing graph
+-   The center contains the main canvas with the DAG
+-   The right shows information about the current DAG (independnce, adjustment, etc)
+
+![DAGitty main screen](images/dagitty1.png) \## Building a Diagram
+
+To create a new DAG, go to the \[Model\] menu at the top of the center panel and select \[New Model\], to open a blank canvas. You can now add variables to this by clicking on an empty part of the diagram. You will be asked to give the variable a name. For now, create two variables (`X` and `Y`):
+
+![Adding variables](images/dagitty2.png)
+
+If you look at the right panel, you'll see that the `Model code` starts to fill out. This is the code description of the model you are creating, and can be used in the offline version of DAGitty.
+
+![Model code](images/dagitty3.png)
+
+Now, let's add an edge connecting X and Y. To add an directional arrow (X-\>Y), first click on X and then on Y. You can remove an existing arrow in the same way. Once you have an arrow from X to Y, you can create a double-headed arrow by reversing this, i.e. clicking first on Y then on X.
+
+If you hover the cursor over the arrow, you'll see it change to a 4-way arrow. You can now click and drag the arrow to maked it curved. Similarly, you can click-and-drag the variables themselves.
+
+## Variable Characteristics
+
+Once you have some variables and arrows on your graph, you may want to manipulate them. If you click on the X variable, it will be highlit with a thick border. You can now use the top-left menu on the left to modify this.
+
+![Model with path](images/dagitty4.png)
+
+You can delete or rename from this menu, but most importantly for causal models, you can set the *exposure* or treatment variable and the *outcome* variable by clicking the appropriate check box in this menu. Use this to set X as the exposure and Y as the outcome:
+
+![Causal Model](images/dagitty5.png)
+
+The exposure variable is now represented as a green node with an arrow, and the outcome as a blue node with a vertical line. You'll also notice that the arrow between them turns green, indicating a *causal* path (you can check this on the legend at the bottom of the panel).
+
+DAGitty also has a series of hotkeys for working with the variables: - `e`: sets the selected variable as the exposure - `o`: sets the selected variable as the outcome - `a`: sets the selected variable to be controlled or adjusted - `u`: defines an unobserved variable (this is something that is theoretically important, but that you don;t have data for) - `d`: deletes the selected variable - `r`: renames the selected variable
+
+Now let's add the third variable Z as a confounder. Click on an empty part of the diagram, create a variable Z, and create arrows from it to both X and Y
+
+![Confounder](images/dagitty6.png)
+
+Once you add both parts, they (and the Z node) will turn purple, indicating a *biasing* path - a variable that can bias your estimation of a causal relationship. We can get more information about this (and the graph in general) in the right panel.
+
+## DAGitty Diagnostics
+
+The right bar of the screen contains lots of information about your graph.
+
+At the top you’ll see that it gives you the Minimal Adjustment Sets. Given the defined exposure and outcome, this shows if a biasing (or a backdoor) path is open. Here there is one and further down in the panel it shows which variables have to be controlled for (or adjusted) to get an unbiased estimated of the causal effect. By default this should be set to the 'total effect', so this shows what adjustment is necessary to obtain the total causal effect. We'll look below at how to use this to identify direct effects. For this graph, the only required adjustment is on Z, the confounding variable.
+
+Remember that the exposure and outcome variables must be set properly for this to work. It will also pay attention to the variables you’ve set to be unobserved, or the variables you’ve said you’ve already adjusted for. The diagram itself also has information. Any lines that are *purple* represent arrows that are a part of an open back door. Lines that are *green* represent the causal effect of interest (either direct or indirect). And lines that are black are neither. If you forget the colors, check the legend in the bottom-left panel.
+
+In the second panel on the right you can see the testable implications of the model. This list all *independencies* in the model (marginal or conditional) between variables, and so implies any relationships that could be tested. There are no independencies in this graph, but to show what this shows, add a new ancestor variable A, that feeds into X.
+
+![Ancestor variable](images/dagitty7.png)
+
+If you now look at the testable implications panel, it shows two independencies:
+
+-   $A\perp\!\!\!\!\!\perp Y|X,Z$: A and Y are conditionally independent if X and Z are controlled/adjusted. So, adjusting for X and Z, A and Y should be unrelated. If you have data for all of these variables, you could then test these with a model. If you found they were related, you’d know the graph was wrong.
+-   $A\perp\!\!\!\!\!\perp Z$: A and Z are fully independent (i.e. there's no path that links them together)
+
+## Other graphs
+
+Now make a new graph to represent a collider. Use X as the exposure, Y as the outcome, and Z as the collider. As a reminder, the collider has arrows coming in from both the exposure and outcome.
+
+![Collider](images/dagitty8.png) When you have built it, there should be no open biasing paths. Try adjusting for Z to see the impact on the graph, and on the information on biases.
+
+And now make a graph representing a chain:
+
+![Chain](images/dagitty9.png)
+
+Note that this graph shows the two causal pathways in green: direct (X-\> Y) and indirect (X -\> Z -\> Y). In the top-right, there is no adjustment set listed, as DAGitty is looking at the total effect (i.e. the direct + the indirect). If you now change the drop-down menu to show the adjustment for the *direct* effect, it will list Z, and state that there are biasing paths. If you now modify Z so that it is adjusted, the bias is removed, so this model would return an unbiased estimated of the direct effect.
+
+## Grace
+
+![SEM from Grace and Keely (2006)](images/keely.png)
+
+
+## Packages
+
+::: {.panel-tabset group="language"}
+# R
+
+We'll be using the following R packages, so make sure they are installed and then load them:
+
+```{r}
+#| output: false
+library(tidyverse)
+library(ggpubr)
+library(ggsci)
+library(sjPlot)
+```
+
+# Python
+
+We'll be using the following Python packages, so install these using your favorite package manage (pip, conda) and import them:
+
+```{python}
+import random
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+:::
+
+If you select the “Adjustment (total effect)” dropdown you’ll see that you can also set it to look for instrumental variables, or to look for the “direct effect”. The direct effect looks only for X -\> Y, and not counting for other front-door paths like X -\> C -\> Y (not pictured).
