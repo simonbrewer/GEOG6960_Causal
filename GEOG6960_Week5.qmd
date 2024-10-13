@@ -83,14 +83,18 @@ In the second panel on the right you can see the testable implications of the mo
 
 If you now look at the testable implications panel, it shows two independencies:
 
--   $A\perp\!\!\!\!\!\perp Y|X,Z$: A and Y are conditionally independent if X and Z are controlled/adjusted. So, adjusting for X and Z, A and Y should be unrelated. If you have data for all of these variables, you could then test these with a model. If you found they were related, you’d know the graph was wrong.
+-   $A\perp\!\!\!\!\!\perp Y|X,Z$: A and Y are conditionally independent if X and Z are controlled/adjusted. So, adjusting for X and Z, A and Y should be unrelated. If you have data for all of these variables, you could then test these with a model (i.e. model `Y ~ A + X + Z`. If no significant relationship was found between `Y ~ A`, this would support the DAG. If you found they were related, you’d know the graph was wrong and needed to be updated. This notion of the important of dependencies/independencies will be important in structural equation modeling.
 -   $A\perp\!\!\!\!\!\perp Z$: A and Z are fully independent (i.e. there's no path that links them together)
 
 ## Other graphs
 
+### Collider
+
 Now make a new graph to represent a collider. Use X as the exposure, Y as the outcome, and Z as the collider. As a reminder, the collider has arrows coming in from both the exposure and outcome.
 
 ![Collider](images/dagitty8.png) When you have built it, there should be no open biasing paths. Try adjusting for Z to see the impact on the graph, and on the information on biases.
+
+### Chain
 
 And now make a graph representing a chain:
 
@@ -98,10 +102,25 @@ And now make a graph representing a chain:
 
 Note that this graph shows the two causal pathways in green: direct (X-\> Y) and indirect (X -\> Z -\> Y). In the top-right, there is no adjustment set listed, as DAGitty is looking at the total effect (i.e. the direct + the indirect). If you now change the drop-down menu to show the adjustment for the *direct* effect, it will list Z, and state that there are biasing paths. If you now modify Z so that it is adjusted, the bias is removed, so this model would return an unbiased estimated of the direct effect.
 
-## Grace
+### Grace and Keely (2006)
 
-![SEM from Grace and Keely (2006)](images/keely.png)
+As a more complex example of a DAG, we'll now use DAGitty to recreate the DAG from Grace & Kelly's 2006 paper. Create a new model in DAGitty, andd then start adding the variables and paths in the figure below (feel free to shorten the variable names). 
 
+![SEM from Grace and Keely (2006)](images/grace_keely.png)
+
+Once you have made the DAG, set fire severity as the exposure and richness as the outcome. Before we look at the adjustment sets, take a quick look at the 'Testable assumptions'. There are a large number listed here, but all of these indicate a potential missing or blocked path. To illustrate why this is useful, let's consider the first one listed: $\mbox{Landscape Position}\perp\!\!\!\!\!\perp \mbox{Fire Severity}|\mbox{Stand Age}$. This implies that if we control for stand age, there should be no remaining relationship between fire severity and landscape position. This follows the graph, which indicates that the stand age is a causal result of the position on the landscape (i.e. the spatial context) and the fire severity is a causal result of age. It's important to note here that this is the assumption made in creating the diagram, but we could now go ahead and test this. If we had data on landscape position, stand age and fire severity, we could build the following model:
+
+```
+severity ~ landscape + stand_age
+```
+
+If a non-significant relationship was found with `landscape`, this would support our DAG. We could continue this and explore the other implications in the same way, all of which would help either support the graph, or lead to modifications. 
+
+The graph also shows a number of biasing paths. Check the top right - what variable(s) do you need to adjust or control for to remove these biases? Try adjusting these and see if it resolves the problem. From this, what variables would you need in a model to estimate the causal effect of fire severity on richness?
+
+```
+richness ~ fire_severity + ...
+```
 
 ## Packages
 
