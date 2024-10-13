@@ -20,7 +20,7 @@ editor: visual
 #| echo: false
 set.seed(42)
 library(reticulate)
-use_condaenv("causal")
+use_condaenv("causal39")
 ```
 
 ## Introduction
@@ -41,7 +41,7 @@ To create a new DAG, go to the \[Model\] menu at the top of the center panel and
 
 ![Adding variables](images/dagitty2.png)
 
-If you look at the right panel, you'll see that the `Model code` starts to fill out. This is the code description of the model you are creating, and can be used in the offline version of DAGitty.
+If you look at the right panel, you'll see that the `Model code` starts to fill out. This is the code description of the model you are creating, and can be used in the offline version of DAGitty. You can also modify this directly, e.g. to set the coordinates of eahc node by hand. 
 
 ![Model code](images/dagitty3.png)
 
@@ -61,7 +61,14 @@ You can delete or rename from this menu, but most importantly for causal models,
 
 The exposure variable is now represented as a green node with an arrow, and the outcome as a blue node with a vertical line. You'll also notice that the arrow between them turns green, indicating a *causal* path (you can check this on the legend at the bottom of the panel).
 
-DAGitty also has a series of hotkeys for working with the variables: - `e`: sets the selected variable as the exposure - `o`: sets the selected variable as the outcome - `a`: sets the selected variable to be controlled or adjusted - `u`: defines an unobserved variable (this is something that is theoretically important, but that you don;t have data for) - `d`: deletes the selected variable - `r`: renames the selected variable
+DAGitty also has a series of hotkeys for working with the variables: 
+
+- `e`: sets the selected variable as the exposure 
+- `o`: sets the selected variable as the outcome 
+- `a`: sets the selected variable to be controlled or adjusted 
+- `u`: defines an unobserved variable (this is something that is theoretically important, but that you don;t have data for) 
+- `d`: deletes the selected variable 
+- `r`: renames the selected variable
 
 Now let's add the third variable Z as a confounder. Click on an empty part of the diagram, create a variable Z, and create arrows from it to both X and Y
 
@@ -122,32 +129,244 @@ The graph also shows a number of biasing paths. Check the top right - what varia
 richness ~ fire_severity + ...
 ```
 
-## Packages
+### Mosquito net example
+
+Next, we'll reproduce the DAG illustrating the effects of mosquito net use on malaria risk, taken from Andrew Heiss' blog and shown below. 
+
+![Mosquito net DAG](images/mosquito2.png)
+
+As before, start by adding and naming the relevant nodes, then add the links between them. If you are stuck for time, you can also copy-paste the DAG code below into the 'Model code' box on the right panel to make the graph.
+
+```
+dag {
+bb="0,0,1,1"
+"Household number" [pos="0.140,0.400"]
+"Malaria risk" [pos="0.540,0.400"]
+"Mosquito net" [pos="0.340,0.400"]
+Eligible [pos="0.140,0.200"]
+Health [pos="0.440,0.600"]
+Income [pos="0.340,0.201"]
+Resistance [pos="0.740,0.400"]
+T_night [pos="0.540,0.200"]
+"Household number" -> "Mosquito net"
+"Household number" -> Eligible
+"Mosquito net" -> "Malaria risk"
+Eligible -> "Mosquito net"
+Health -> "Malaria risk"
+Health -> "Mosquito net"
+Income -> "Malaria risk"
+Income -> "Mosquito net"
+Income -> Eligible
+Income -> Health
+Resistance -> "Malaria risk"
+T_night -> "Malaria risk"
+T_night -> "Mosquito net"
+}
+```
+
+Now set the exposure (Mosquito net) and the outcome (malaria risk). Check the top right panel for the adjustment set (this should be `Health`, `Income` and `Nighttime temp`). Each of these is a confounder in the model:
+- `Health`: poor health increases both risk and likelihood of net use
+- `Income`: increases likelihood of net use but decreases risk (e.g. air conditioner use)
+- `Temperatures`: Increases risk (mosquito activity) and may decrease net use
+
+Make these adjustments, and check that your new, adjusted graph has no more biasing paths (it should say `Correctly adjusted` in the top right panel). Given these adjustments, what would your model need to include?
+
+```
+malaria_risk ~ mosquito_net + ...
+```
+
+Asa test, you can now see what would happen if we were to update the graph. We'll imagine that the eligibility for the government funded net program also depends on whether the mosquitos in an areas are resistant. Add a path from `resistance` to `eligibility` and see how it changes the model. What would now need to include in your model to correctly adjust it?
+
+## Coding DAGs
+
+Both R and Python have packages that allow to create DAGs programmatically:
+
+- R: **dagitty** and **ggdag**
+- Python: **causalgraphicalmodels** (note this only seems to work in Python 3.9 or earlier). You will also need **graphviz** and possibly **python-graphviz** to render the graphs
+
+We'll illustrate these very quickly here with a subset of the Grace and Kelly DAG (stand age, fire severity, plant abundance and richness). Fist load the relevant packages:
 
 ::: {.panel-tabset group="language"}
-# R
 
-We'll be using the following R packages, so make sure they are installed and then load them:
+# R
 
 ```{r}
 #| output: false
-library(tidyverse)
-library(ggpubr)
-library(ggsci)
-library(sjPlot)
+library(dagitty)
+library(ggdag)
 ```
 
 # Python
 
-We'll be using the following Python packages, so install these using your favorite package manage (pip, conda) and import them:
-
 ```{python}
-import random
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+from causalgraphicalmodels import CausalGraphicalModel
 ```
 :::
 
-If you select the “Adjustment (total effect)” dropdown you’ll see that you can also set it to look for instrumental variables, or to look for the “direct effect”. The direct effect looks only for X -\> Y, and not counting for other front-door paths like X -\> C -\> Y (not pictured).
+
+### Creating a DAG
+
+
+::: {.panel-tabset group="language"}
+
+# R
+
+We'll start by creating the DAG. In R the main function is `dagify()`. This takes a series of arguments:
+
+- The set of paths to include. These are specified using R's formula syntax, with the destination node on the left hand side and the origin on the right. So `X ~ Y` would make a path going from `X` to `Y`. Note that if `Y` has more than one path pointing to it, you should include both in the same formula. So `Y ~ X + Z`, with have two paths to Y from `X` and `Z` respectively
+- The coordinates specifying the position of each node
+- Which variable to use for the exposure and outcome [optional]
+- Labels for each node [optional]
+
+```{r}
+grace_dag <- dagify(fire_sev ~ stand_age,
+                    abundance ~ fire_sev,
+                    richness ~ abundance + stand_age,
+                    coords = list(x = c(stand_age = 1,
+                                        fire_sev = 2,
+                                        abundance = 3,
+                                        richness = 4), 
+                                  y = c(stand_age = 1,
+                                        fire_sev = 1,
+                                        abundance = 1,
+                                        richness = 2)
+                    ),
+                    exposure = "fire_sev",
+                    outcome = "richness",
+                    labels = c(stand_age = "Stand age", 
+                               fire_sev = "Fire severity", 
+                               abundance = "Plant abundance",
+                               richness = "Richness")
+)
+```
+
+# Python
+
+In Python, there are two arguments:
+
+- A list of nodes
+- A list of tuples defining each path (`"origin", "destination"`)
+
+```{python}
+grace_dag = CausalGraphicalModel(
+    nodes=["stand_age", "fire_severity", "plant_abundance", "richness"],
+    edges=[
+        ("stand_age", "fire_severity"), 
+        ("stand_age", "richness"), 
+        ("fire_severity", "plant_abundance"),
+        ("plant_abundance", "richness")
+    ]
+)
+```
+:::
+
+::: {.panel-tabset group="language"}
+
+Let's now plot the DAG
+
+# R
+
+The base function for this in R is `ggdag`. This is built on top of **ggplot2**, so you can use functions from the package to update your plot. Here we'll just add a theme to give a blank background:
+
+```{r}
+ggdag(grace_dag) +
+  theme_dag()
+```
+
+By default, this just uses the variable names as labels, which (as you can see) don't fit well with the nodes. We can update this to show the manually defined labels, and the exposure/outcome variables as follows:
+
+```{r}
+ggdag_status(grace_dag, use_labels = "label", text = FALSE) +
+  theme_dag()
+```
+
+
+
+# Python
+
+In Python, the graphical model object has a method to plot it using networkx:
+
+```{python}
+grace_dag.draw()
+```
+:::
+
+You can get the list of conditional independencies as follows:
+
+::: {.panel-tabset group="language"}
+
+# R
+
+```{r}
+impliedConditionalIndependencies(grace_dag)
+```
+
+Here the syntax is `var1` is conditionally independent (`_||_`) on `var2` given (`|`) `var3`
+
+# Python
+
+```{python}
+grace_dag.get_all_independence_relationships()
+```
+
+Here the syntax is (`(var1, var2, {var3})`): `var1` is conditionally independent on `var2` given `var3`
+:::
+
+These show that:
+
+- stand age and abundance are conditionally independent given fire severity
+- fire severity and richness are conditionally independent given abundance and stand age
+
+The DAGs can be used to show all possible paths between the exposure (fire) and outcome (richness):
+
+::: {.panel-tabset group="language"}
+
+# R
+
+```{r}
+paths(grace_dag)
+```
+
+You can also visualize these:
+
+```{r}
+ggdag_paths(grace_dag)
+```
+
+# Python
+
+In Python, we can extract the *backdoor* paths - these are usually paths through a confounding variable (here, the stand age)
+
+```{python}
+grace_dag.get_all_backdoor_paths("fire_severity", "richness")
+```
+
+:::
+
+Finally, we can use these DAGs to identify the adjustment sets
+
+::: {.panel-tabset group="language"}
+
+# R
+
+In R, we can extract these directly, as the exposure and outcome were preset when making the DAG. Note that you can specify these in this function, if you want to test a different part of the graph. 
+
+```{r}
+adjustmentSets(grace_dag)
+```
+
+You can also visualize these:
+
+```{r}
+ggdag_adjustment_set(grace_dag)
+```
+
+# Python
+
+To get the adjustment set in Python, we need to specify the exposure and outcome. 
+
+```{python}
+grace_dag.get_all_backdoor_adjustment_sets("fire_severity", "richness")
+```
+
+:::
