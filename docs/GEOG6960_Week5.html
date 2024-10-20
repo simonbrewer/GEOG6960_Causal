@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Simon Brewer">
-<meta name="dcterms.date" content="2024-10-13">
+<meta name="dcterms.date" content="2024-10-19">
 
 <title>GEOG 6960 Causality in Geog. Studies 5</title>
 <style>
@@ -193,7 +193,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 13, 2024</p>
+      <p class="date">October 19, 2024</p>
     </div>
   </div>
   
@@ -474,7 +474,7 @@ T_night -&gt; "Mosquito net"
 <div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>grace_dag.draw()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>&lt;graphviz.graphs.Digraph object at 0x13d3cc880&gt;</code></pre>
+<pre><code>&lt;graphviz.graphs.Digraph object at 0x130044880&gt;</code></pre>
 </div>
 </div>
 </div>
@@ -498,7 +498,7 @@ fr_s _||_ rchn | abnd, stn_</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>grace_dag.get_all_independence_relationships()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[('plant_abundance', 'stand_age', {'fire_severity'}), ('fire_severity', 'richness', {'plant_abundance', 'stand_age'})]</code></pre>
+<pre><code>[('stand_age', 'plant_abundance', {'fire_severity'}), ('richness', 'fire_severity', {'stand_age', 'plant_abundance'})]</code></pre>
 </div>
 </div>
 <p>Here the syntax is (<code>(var1, var2, {var3})</code>): <code>var1</code> is conditionally independent on <code>var2</code> given <code>var3</code></p>
