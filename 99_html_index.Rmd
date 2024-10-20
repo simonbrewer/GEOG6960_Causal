@@ -30,6 +30,8 @@ Often in scientific studies we are interested in establishing a cause and effect
     - [Lab notes][lab3]
 - Week 5
     - [Lab notes][lab5]
+- Week 6
+    - [Lab notes][lab6]
 
 # Data
 
@@ -38,3 +40,4 @@ No files yet - watch this space
 [lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
 [lab3]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week3.html
 [lab5]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week5.html
+[lab6]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week6.html
