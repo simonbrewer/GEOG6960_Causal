@@ -124,72 +124,313 @@ keeley.cov()
 
 We'll start by creating a subset model (the same one we looked at in class). This will only use three variables (`age`, `firesev` and `cover`). These are related by the following DAG:
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(ggdag)
-chain_dag <- dagify(z ~ x,
-                    y ~ x + z,
-                    coords = list(x = c(x = 1, y = 3, z = 2),
-                                  y = c(x = 1, y = 1, z = 2)),
-                    exposure = "x",
-                    outcome = "y")
-
-ggdag(chain_dag) +
+grace_dag <- dagify(firesev ~ age,
+                    cover ~ age + firesev,
+                    coords = list(x = c(age = 1,
+                                        firesev = 2,
+                                        cover = 3), 
+                                  y = c(age = 1,
+                                        firesev = 2,
+                                        cover = 1)
+                    ),
+                    exposure = "age",
+                    outcome = "cover",
+                    labels = c(age = "Stand age", 
+                               firesev = "Fire severity", 
+                               cover = "Plant cover")
+)
+ggdag(grace_dag, use_labels = "label", text = FALSE) +
   theme_dag()
 ```
+
+Building a structural equation model usually takes two steps. First, we need to describe the DAG that relates the variables, and second, we use a dataset to estimate values for the paths and other parameters. 
+
+#### Model/DAG description
+
+Both **lavaan** and **semopy** use a similar syntax to describe the model, based on R's formula syntax. For each endogenous variable (one that has at least one arrow *coming in* to it) in the graph, we need a formula to describe the paths. This is written as:
+
+```
+y ~ x1 + x2 + ...
+```
+
+Where `y` is the variable of interest, and `x1`, `x2`, etc are all variables that are at the origin of the path flowing into `y`. For the DAG above, we need a formula for fire severity (`firesev`) and plant cover (`cover`). We do not need one for stand age as there are no incoming arrows in this DAG. The set of formula are specified as a character string. Note that the name of the variables in the formula need to exactly match the names of the data frame column that hold that variable.
 
 ::: {.panel-tabset group="language"}
 # R
 
-We'll start by creating the DAG. In R the main function is `dagify()`. This takes a series of arguments:
-
--   The set of paths to include. These are specified using R's formula syntax, with the destination node on the left hand side and the origin on the right. So `X ~ Y` would make a path going from `X` to `Y`. Note that if `Y` has more than one path pointing to it, you should include both in the same formula. So `Y ~ X + Z`, with have two paths to Y from `X` and `Z` respectively
--   The coordinates specifying the position of each node
--   Which variable to use for the exposure and outcome \[optional\]
--   Labels for each node \[optional\]
+In R, these are generally written as one formula per line:
 
 ```{r}
-# grace_dag <- dagify(fire_sev ~ stand_age,
-#                     abundance ~ fire_sev,
-#                     richness ~ abundance + stand_age,
-#                     coords = list(x = c(stand_age = 1,
-#                                         fire_sev = 2,
-#                                         abundance = 3,
-#                                         richness = 4), 
-#                                   y = c(stand_age = 1,
-#                                         fire_sev = 1,
-#                                         abundance = 1,
-#                                         richness = 2)
-#                     ),
-#                     exposure = "fire_sev",
-#                     outcome = "richness",
-#                     labels = c(stand_age = "Stand age", 
-#                                fire_sev = "Fire severity", 
-#                                abundance = "Plant abundance",
-#                                richness = "Richness")
-# )
+keeley_formula = 
+'firesev ~ age
+cover ~ age + firesev
+'
 ```
 
 # Python
 
-In Python, there are two arguments:
-
--   A list of nodes
--   A list of tuples defining each path (`"origin", "destination"`)
+In Python, these are concatenated into a single line with line returns (`\n`) to separate the formula:
 
 ```{python}
-# grace_dag = CausalGraphicalModel(
-#     nodes=["stand_age", "fire_severity", "plant_abundance", "richness"],
-#     edges=[
-#         ("stand_age", "fire_severity"), 
-#         ("stand_age", "richness"), 
-#         ("fire_severity", "plant_abundance"),
-#         ("plant_abundance", "richness")
-#     ]
-# )
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 ```
 :::
 
+#### Model fitting 
 
+::: {.panel-tabset group="language"}
+# R
+
+In R, the function is `sem()`. This needs a minimum of two arguments: the model formula and the data frame containing the variables of interest. We also use the argument `meanstructure = TRUE` to return the intercepts: 
+
+```{r}
+keeley_sem1 <- sem(keeley_formula, 
+                   data = keeley,
+                   meanstructure = TRUE)
+```
+
+# Python
+
+In Python, ...:
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+Now let's explore the output. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+summary(keeley_sem1, 
+        standardize = TRUE, 
+        rsq = TRUE)
+```
+
+There's quite a lot of output in the model summary. The various sections (from the top) are:
+
+- Model fitting details: the fitting and optimization method and the number of parameters estimated
+- Model test: the results of the Chi-squared test for goodness-of-fit
+- Parameter estimates: settings for parameter estimates (incl. standard errors)
+- Regressions: the path coefficients. For each one, there is
+  - The estimate 
+  - The standard error
+  - The estimate as a $z$-score
+  - The $p$-value 
+  - The estimate standardized for any latent variables (we don't have any)
+  - The standardized coefficient. This is the coefficient we would obtain if all the variables were $z$-score transformed, and allows comparison between the strength of the different paths
+- Intercepts: estimate of intercept/mean values for each endogenous variable. The columns are the same as the previous table
+- Variances: the estimate variance of the endogenous variables
+- R-Square: the $r$-squared value for each endogenous variable (how much of the variance of that variable was explained)
+
+# Python
+
+In Python, ...:
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+#### Model diagnostics
+
+::: {.panel-tabset group="language"}
+# R
+
+In addition to the summary output, we can access model diagnostics using other functions. Using `anova()` will run the Chi-squared test comparing this model to a fully saturated model. In this case, the model we have fit is the saturated model, so the Chi-squared cannot be calculated (but see below for a better test):
+
+```{r}
+anova(keeley_sem1)
+```
+
+You can also obtain the model AIC with, not too surprisingly, the `AIC()` function. There are several other diagnostics that can be obtained with the `fitMeasures` function. This produces a large number of different test scores, so we'll limit it here to the root-mean squared error of approximation (RMSEA), which should ideally be below 0.1. Again, with a saturated model, this is zero and not very meaningful. 
+
+```{r}
+fitMeasures(keeley_sem1, c('rmsea'))
+```
+
+# Python
+
+In Python, ...:
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+#### Model visualization
+
+An easier way to portray the results is to plot out the DAG with the SEM estimated coefficients on the paths. This should show significant paths between `age` and `firesev`, and between `firesev` and `cover`, but the direct path from `age` to `cover` is not significant. 
+
+::: {.panel-tabset group="language"}
+
+# R
+
+```{r eval=FALSE}
+lavaanPlot(keeley_sem1, coef=TRUE, stars="regress")
+```
+
+![lavaanPlot](images/keeley_sem1.png) 
+
+# Python
+
+In Python, ...:
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+#### A simpler model
+
+As the path between age and cover appears non-significant, we can ask if it is really a necessary part of the model. To do this, we'll drop the path, rebuild the model and check the results of the Chi-squared test.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_formula = 
+'firesev ~ age
+cover ~ firesev
+'
+keeley_sem2 <- sem(keeley_formula, 
+                   data = keeley,
+                   meanstructure = TRUE)
+```
+
+```{r}
+summary(keeley_sem2, 
+        standardize = TRUE, 
+        rsq = TRUE)
+```
+
+
+# Python
+
+In Python, these are concatenated into a single line with line returns (`\n`) to separate the formula:
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+Now we get a value for the Chi-squared test of about 3.3, and a $p$-value of about 0.07, which suggests there is no significant difference between this simpler model and the full covariance matrix. Or to put it more simply, dropping the path from `age` to `cover` has not made the model notably worse. 
+
+#### The full model
+
+Now let's make the full model, detailed in the DAG below:
+
+```{r echo=FALSE}
+grace_dag <- dagify(age ~ distance,
+                    hetero ~ distance,
+                    abiotic ~ distance,
+                    firesev ~ age,
+                    cover ~ firesev,
+                    rich ~ cover + hetero + abiotic + distance,
+                    coords = list(x = c(distance = 1,
+                                        age = 2,
+                                        firesev = 3,
+                                        hetero = 3,
+                                        abiotic = 3,
+                                        cover = 4,
+                                        rich = 5), 
+                                  y = c(distance = 2,
+                                        age = 1,
+                                        firesev = 1,
+                                        hetero = 3,
+                                        abiotic = 4,
+                                        cover = 1,
+                                        rich = 2)
+                    ),
+                    exposure = "firesev",
+                    outcome = "rich"
+)
+
+ggdag(grace_dag) +
+  theme_dag()
+```
+
+As before, start by building the paths. Note that, apart from `distance`, all variables are endogenous and will need a formula.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_formula = 
+'
+age ~ distance
+hetero ~ distance
+abiotic ~ distance
+firesev ~ age
+cover ~ firesev
+rich ~ cover + hetero + abiotic + distance
+'
+```
+
+# Python
+
+```{python}
+keeley_formula = 'age ~ distance\nhetero ~ distance\nabiotic ~ distance\nfiresev ~ age\ncover ~ firesev\nrich ~ cover + hetero + abiotic + distance'
+```
+:::
+
+Now let's build the model and check how well it fits.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_sem3 <- sem(keeley_formula, 
+                   data = keeley,
+                   meanstructure = TRUE)
+summary(keeley_sem3)
+```
+
+# Python
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+The goodness-of-fit value indicates that this model fits well (i.e. $p>0.05$), but it is close to the threshold. We can explore which of the missing paths may be the most useful to include to improve the fit by calculating the modification indices. 
+
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_formula = 
+'
+age ~ distance
+hetero ~ distance
+abiotic ~ distance
+firesev ~ age
+cover ~ firesev + hetero
+rich ~ cover + hetero + abiotic + distance
+'
+keeley_sem4 <- sem(keeley_formula, 
+                   data = keeley,
+                   meanstructure = TRUE)
+anova(keeley_sem4)
+```
+
+# Python
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+## Example 2
+
+Now try to fit the full model as described by the DAG below. Build the formula, then fit the model and check the Chis-squared test. Does this give a good fit? Are there any missing paths that should be included? Try visualizing the model to see the results.
+
+![lavaanPlot](images/keeley_sem5.png) 
 
 # Appendix: Data files
 
