@@ -25,18 +25,16 @@ use_condaenv("causal")
 
 ## Introduction
 
-In this lab, we're going to explore how to build and test structural equation models (SEMs). We'll use two examples:
-- The Grace and Keeley fire/plant abundance dataset (*keeley.csv*)
-- The mosquito net usage dataset (*mosquito_nets.csv*)
+In this lab, we're going to explore how to build and test structural equation models (SEMs). We'll use two examples: - The Grace and Keeley fire/plant abundance dataset (*keeley.csv*) - The mosquito net usage dataset (*mosquito_nets.csv*)
 
 ## Coding SEMs
 
-Both R and Python have packages that allow you to create SEMs and estimate coefficients based on a dataset. 
+Both R and Python have packages that allow you to create SEMs and estimate coefficients based on a dataset.
 
 -   R: **lavaan** and **sem**
 -   Python: **semopy** (`pip install semopy`)
 
-First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building. 
+First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -68,7 +66,6 @@ Let's start by loading the Grace and Keeley dataset and exploring the values. Th
 ::: {.panel-tabset group="language"}
 # R
 
-
 ```{r}
 keeley <- read.csv("./data/keeley.csv")
 keeley <- keeley %>%
@@ -85,11 +82,10 @@ keeley.describe()
 ```
 :::
 
-Let's take a quick look at the distribution of the variables in the file. These are generally normally distributed (or at least close enough for our purposes). The one exception is the distance to coast variable which shows three clusters of plots. 
+Let's take a quick look at the distribution of the variables in the file. These are generally normally distributed (or at least close enough for our purposes). The one exception is the distance to coast variable which shows three clusters of plots.
 
 ::: {.panel-tabset group="language"}
 # R
-
 
 ```{r}
 ggpairs(keeley)
@@ -107,7 +103,6 @@ We can also take a look at the covariance matrix based on the set of variables. 
 ::: {.panel-tabset group="language"}
 # R
 
-
 ```{r}
 cov(keeley)
 ```
@@ -118,7 +113,6 @@ cov(keeley)
 keeley.cov()
 ```
 :::
-
 
 ### Creating a structural equation model
 
@@ -145,13 +139,13 @@ ggdag(grace_dag, use_labels = "label", text = FALSE) +
   theme_dag()
 ```
 
-Building a structural equation model usually takes two steps. First, we need to describe the DAG that relates the variables, and second, we use a dataset to estimate values for the paths and other parameters. 
+Building a structural equation model usually takes two steps. First, we need to describe the DAG that relates the variables, and second, we use a dataset to estimate values for the paths and other parameters.
 
 #### Model/DAG description
 
 Both **lavaan** and **semopy** use a similar syntax to describe the model, based on R's formula syntax. For each endogenous variable (one that has at least one arrow *coming in* to it) in the graph, we need a formula to describe the paths. This is written as:
 
-```
+```         
 y ~ x1 + x2 + ...
 ```
 
@@ -178,12 +172,12 @@ keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 ```
 :::
 
-#### Model fitting 
+#### Model fitting
 
 ::: {.panel-tabset group="language"}
 # R
 
-In R, the function is `sem()`. This needs a minimum of two arguments: the model formula and the data frame containing the variables of interest. We also use the argument `meanstructure = TRUE` to return the intercepts: 
+In R, the function is `sem()`. This needs a minimum of two arguments: the model formula and the data frame containing the variables of interest. We also use the argument `meanstructure = TRUE` to return the intercepts:
 
 ```{r}
 keeley_sem1 <- sem(keeley_formula, 
@@ -200,7 +194,7 @@ keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 ```
 :::
 
-Now let's explore the output. 
+Now let's explore the output.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -213,19 +207,19 @@ summary(keeley_sem1,
 
 There's quite a lot of output in the model summary. The various sections (from the top) are:
 
-- Model fitting details: the fitting and optimization method and the number of parameters estimated
-- Model test: the results of the Chi-squared test for goodness-of-fit
-- Parameter estimates: settings for parameter estimates (incl. standard errors)
-- Regressions: the path coefficients. For each one, there is
-  - The estimate 
-  - The standard error
-  - The estimate as a $z$-score
-  - The $p$-value 
-  - The estimate standardized for any latent variables (we don't have any)
-  - The standardized coefficient. This is the coefficient we would obtain if all the variables were $z$-score transformed, and allows comparison between the strength of the different paths
-- Intercepts: estimate of intercept/mean values for each endogenous variable. The columns are the same as the previous table
-- Variances: the estimate variance of the endogenous variables
-- R-Square: the $r$-squared value for each endogenous variable (how much of the variance of that variable was explained)
+-   Model fitting details: the fitting and optimization method and the number of parameters estimated
+-   Model test: the results of the Chi-squared test for goodness-of-fit
+-   Parameter estimates: settings for parameter estimates (incl. standard errors)
+-   Regressions: the path coefficients. For each one, there is
+    -   The estimate
+    -   The standard error
+    -   The estimate as a $z$-score
+    -   The $p$-value
+    -   The estimate standardized for any latent variables (we don't have any)
+    -   The standardized coefficient. This is the coefficient we would obtain if all the variables were $z$-score transformed, and allows comparison between the strength of the different paths
+-   Intercepts: estimate of intercept/mean values for each endogenous variable. The columns are the same as the previous table
+-   Variances: the estimate variance of the endogenous variables
+-   R-Square: the $r$-squared value for each endogenous variable (how much of the variance of that variable was explained)
 
 # Python
 
@@ -247,7 +241,7 @@ In addition to the summary output, we can access model diagnostics using other f
 anova(keeley_sem1)
 ```
 
-You can also obtain the model AIC with, not too surprisingly, the `AIC()` function. There are several other diagnostics that can be obtained with the `fitMeasures` function. This produces a large number of different test scores, so we'll limit it here to the root-mean squared error of approximation (RMSEA), which should ideally be below 0.1. Again, with a saturated model, this is zero and not very meaningful. 
+You can also obtain the model AIC with, not too surprisingly, the `AIC()` function. There are several other diagnostics that can be obtained with the `fitMeasures` function. This produces a large number of different test scores, so we'll limit it here to the root-mean squared error of approximation (RMSEA), which should ideally be below 0.1. Again, with a saturated model, this is zero and not very meaningful.
 
 ```{r}
 fitMeasures(keeley_sem1, c('rmsea'))
@@ -264,17 +258,16 @@ keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 
 #### Model visualization
 
-An easier way to portray the results is to plot out the DAG with the SEM estimated coefficients on the paths. This should show significant paths between `age` and `firesev`, and between `firesev` and `cover`, but the direct path from `age` to `cover` is not significant. 
+An easier way to portray the results is to plot out the DAG with the SEM estimated coefficients on the paths. This should show significant paths between `age` and `firesev`, and between `firesev` and `cover`, but the direct path from `age` to `cover` is not significant.
 
 ::: {.panel-tabset group="language"}
-
 # R
 
 ```{r eval=FALSE}
 lavaanPlot(keeley_sem1, coef=TRUE, stars="regress")
 ```
 
-![lavaanPlot](images/keeley_sem1.png) 
+![lavaanPlot](images/keeley_sem1.png)
 
 # Python
 
@@ -308,7 +301,6 @@ summary(keeley_sem2,
         rsq = TRUE)
 ```
 
-
 # Python
 
 In Python, these are concatenated into a single line with line returns (`\n`) to separate the formula:
@@ -318,7 +310,7 @@ keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 ```
 :::
 
-Now we get a value for the Chi-squared test of about 3.3, and a $p$-value of about 0.07, which suggests there is no significant difference between this simpler model and the full covariance matrix. Or to put it more simply, dropping the path from `age` to `cover` has not made the model notably worse. 
+Now we get a value for the Chi-squared test of about 3.3, and a $p$-value of about 0.07, which suggests there is no significant difference between this simpler model and the full covariance matrix. Or to put it more simply, dropping the path from `age` to `cover` has not made the model notably worse.
 
 #### The full model
 
@@ -397,8 +389,27 @@ keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 ```
 :::
 
-The goodness-of-fit value indicates that this model fits well (i.e. $p>0.05$), but it is close to the threshold. We can explore which of the missing paths may be the most useful to include to improve the fit by calculating the modification indices. 
+The goodness-of-fit value indicates that this model fits well (i.e. $p>0.05$), but it is close to the threshold. We can explore which of the missing paths may be the most useful to include to improve the fit by calculating the modification indices. These indicate the change in Chi-squared value if a path was included in the model.
 
+::: {.panel-tabset group="language"}
+# R
+
+In R, we can calculate these with `modificationIndices`. We'll get these, sort for the largest index and print the top 5
+
+```{r}
+modificationIndices(keeley_sem3) %>%
+  arrange(-mi) %>%
+  head(5)
+```
+
+# Python
+
+```{python}
+keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
+```
+:::
+
+The path with the largest impact on the Chi-squared value is between `cover` and `hetero`. Physically, the most likely direction for this is that heterogeneity causally affects cover, so we'll include that (`cover ~ firesev + hetero`) and update this model.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -416,7 +427,7 @@ rich ~ cover + hetero + abiotic + distance
 keeley_sem4 <- sem(keeley_formula, 
                    data = keeley,
                    meanstructure = TRUE)
-anova(keeley_sem4)
+summary(keeley_sem4)
 ```
 
 # Python
@@ -426,38 +437,90 @@ keeley_formula = 'firesev ~ age\ncover ~ age + firesev'
 ```
 :::
 
+![lavaanPlot](images/keeley_sem4.png)
+
+The new model shows a marginally significant negative relationship between heterogeneity and cover.
+
 ## Example 2
 
-Now try to fit the full model as described by the DAG below. Build the formula, then fit the model and check the Chis-squared test. Does this give a good fit? Are there any missing paths that should be included? Try visualizing the model to see the results.
+For a second example, you'll build and fit a structural equation model to the mosquito net data that we briefly introduced in the last lab. This is a simulated dataset on how the use of mosquito nets affects the risk of malaria (see appendix for details). Unlike the previous example, you'll need to work out the code on your own.
 
-![lavaanPlot](images/keeley_sem5.png) 
+### Data
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+mosquito <- read.csv("./data/mosquito_nets.csv")
+mosquito <- mosquito %>%
+  select(-id)
+str(mosquito)
+```
+
+```{r warning=FALSE, message=FALSE}
+ggpairs(mosquito)
+```
+
+```{r warning=FALSE, message=FALSE}
+ggplot(mosquito, aes(x = net, y = malaria_risk)) +
+  geom_boxplot() +
+  theme_bw()
+```
+
+# Python
+
+```{python}
+mosquito = pd.read_csv("./data/mosquito_nets.csv")
+mosquito.drop('id', axis=1, inplace=True)
+mosquito.describe()
+```
+
+```{python}
+sns.pairplot(mosquito)
+```
+
+```{python}
+sns.boxplot(mosquito, x="net", y="malaria_risk")
+```
+:::
+
+### DAG
+
+Now try to fit the full model as described by the DAG below. Start by creating the set of model formulae. A good first order test is to check that the total number of covariates (across all formulae) equals the number of arrows in the DAG. 
+
+![lavaanPlot](images/mosquito_dag.png)
+
+Once you've done this, fit and visualize the model then check the Chis-squared test. Does this give a good fit? Are there any missing paths that should be included? 
+
 
 # Appendix: Data files
 
 ## Grace and Keely dataset *keeley.csv*
 
-| Column header | Variable |
-| --- | --- |
-| distance | Distance to coast (m) |
-| elev | Elevation a.s.l. |
-| abiotic | Abiotic favorability |
-| age | Age of stand before fire |
-| hetero | Plot heterogeneity |
-| firesev | Severity of fire |
-| cover | Cover of plants |
-| rich | Plant species richness |
+| Column header | Variable                 |
+|---------------|--------------------------|
+| distance      | Distance to coast (m)    |
+| elev          | Elevation a.s.l.         |
+| abiotic       | Abiotic favorability     |
+| age           | Age of stand before fire |
+| hetero        | Plot heterogeneity       |
+| firesev       | Severity of fire         |
+| cover         | Cover of plants          |
+| rich          | Plant species richness   |
 
 ## Mosquito net usage dataset *mosquito_nets.csv*
 
-| Column header | Variable |
-| --- | --- |
-| id | observation ID |
-| net | Did the household use nets (F/T) |
-| net_num | Did the household use nets (0/1) |
-| malaria_risk | likelihood that someone in the household will be infected (0-100) | 
-|income | Monthly income ($) |
-| health | Self-reported healthiness (0-100) |
-| household | Number of people living in the household |
-| eligible | Eligibility for the free net program (0/1) |
-| temperature | Average temperature at night (C) |
-| resistance | Resistance of mosquito strains to insecticide  |
+Taken from https://github.com/r-causal/causalworkshop
+
+| Column header | Variable                                                          |
+|------------------------------------|------------------------------------|
+| id            | observation ID                                                    |
+| net           | Did the household use nets (F/T)                                  |
+| net_num       | Did the household use nets (0/1)                                  |
+| malaria_risk  | likelihood that someone in the household will be infected (0-100) |
+| income        | Monthly income (\$)                                               |
+| health        | Self-reported healthiness (0-100)                                 |
+| household     | Number of people living in the household                          |
+| eligible      | Eligibility for the free net program (0/1)                        |
+| temperature   | Average temperature at night (C)                                  |
+| resistance    | Resistance of mosquito strains to insecticide                     |
