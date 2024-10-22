@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Simon Brewer">
-<meta name="dcterms.date" content="2024-10-20">
+<meta name="dcterms.date" content="2024-10-21">
 
 <title>GEOG 6960 Causality in Geog. Studies 6</title>
 <style>
@@ -195,7 +195,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 20, 2024</p>
+      <p class="date">October 21, 2024</p>
     </div>
   </div>
   
@@ -426,9 +426,10 @@ rich      77.954754  58.967406  -57.335955  ... -9.180506  1.577267  228.180899
 </div>
 </div>
 <div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
-<p>In Python, …:</p>
+<p><code>semopy</code> follows the standard Python approach of first instantiating the semopy model with the formula, then fiting it using the <code>keeley</code> dataframe:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>mod <span class="op">=</span> semopy.Model(keeley_formula)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> mod.fit(keeley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -506,10 +507,43 @@ R-Square:
 </ul>
 </div>
 <div id="tabset-7-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-2-tab">
-<p>In Python, …:</p>
+<p>Once fit, the original model contains details of the fitting process (aglorithm, optimizer, etc):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Name of objective: MLW
+Optimization method: SLSQP
+Optimization successful.
+Optimization terminated successfully
+Objective value: 0.000
+Number of iterations: 13
+Params: 0.060 -0.005 -0.067 0.078 2.145</code></pre>
 </div>
+</div>
+<p>The estimated model parameters, as well as standard errors and <span class="math inline">\(p\)</span>-values, are in the fitted model object. Path coefficients are noted with <code>~</code> and variable variance is noted with <code>~~</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>mod.inspect()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      lval  op     rval  Estimate  Std. Err   z-value       p-value
+0  firesev   ~      age  0.059658  0.012353  4.829254  1.370455e-06
+1    cover   ~      age -0.004827  0.002637 -1.830613  6.715826e-02
+2    cover   ~  firesev -0.067239  0.020052 -3.353280  7.985976e-04
+3  firesev  ~~  firesev  2.144768  0.319723  6.708204  1.970335e-11
+4    cover  ~~    cover  0.077611  0.011570  6.708204  1.970335e-11</code></pre>
+</div>
+</div>
+<p>Note that the intercepts are not returned by default. You can get these with:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> semopy.means <span class="im">import</span> estimate_means</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>estimate_means(mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      lval op rval   Estimate
+0      age  ~    1  25.566667
+1  firesev  ~    1   3.039744
+2    cover  ~    1   1.121591</code></pre>
+</div>
+</div>
+<p>This returns the intercepts <em>plus</em> the mean of the exogenous variables (<code>age</code> in this example)</p>
 </div>
 </div>
 </div>
@@ -522,7 +556,7 @@ R-Square:
 <div id="tabset-8-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-8-1-tab">
 <p>In addition to the summary output, we can access model diagnostics using other functions. Using <code>anova()</code> will run the Chi-squared test comparing this model to a fully saturated model. In this case, the model we have fit is the saturated model, so the Chi-squared cannot be calculated (but see below for a better test):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(keeley_sem1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(keeley_sem1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Chi-Squared Test Statistic (unscaled)
 
@@ -533,7 +567,7 @@ Model      0 363.4 380.9     0          0       0           </code></pre>
 </div>
 <p>You can also obtain the model AIC with, not too surprisingly, the <code>AIC()</code> function. There are several other diagnostics that can be obtained with the <code>fitMeasures</code> function. This produces a large number of different test scores, so we’ll limit it here to the root-mean squared error of approximation (RMSEA), which should ideally be below 0.1. Again, with a saturated model, this is zero and not very meaningful.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fitMeasures</span>(keeley_sem1, <span class="fu">c</span>(<span class="st">'rmsea'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fitMeasures</span>(keeley_sem1, <span class="fu">c</span>(<span class="st">'rmsea'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rmsea 
     0 </code></pre>
@@ -541,9 +575,23 @@ Model      0 363.4 380.9     0          0       0           </code></pre>
 </div>
 </div>
 <div id="tabset-8-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-2-tab">
-<p>In Python, …:</p>
+<p>In Python, we can access model diagnostics using the <code>calc_stats</code> function. This produces a large amount of metrics, including the Chi-squared value, CFI, RMSEA, etc</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>semopy.calc_stats(mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       DoF  DoF Baseline     chi2  ...   AIC        BIC        LogLik
+Value    1             4  0.00002  ...  10.0  22.499048  2.224589e-07
+
+[1 rows x 14 columns]</code></pre>
+</div>
+</div>
+<p>Here’s the results of the Chi-squared test. In this case, the model we have fit is the saturated model, so the Chi-squared cannot be calculated as there are no degrees of freedom. (<code>semopy</code> uses an approximation so the Chi-squared value is not exactly equal to zero.)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>semopy.calc_stats(mod)[[<span class="st">'chi2'</span>, <span class="st">'chi2 p-value'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          chi2  chi2 p-value
+Value  0.00002       0.99643</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -557,7 +605,7 @@ Model      0 363.4 380.9     0          0       0           </code></pre>
 <div class="tab-content" data-group="language">
 <div id="tabset-9-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-9-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lavaanPlot</span>(keeley_sem1, <span class="at">coef=</span><span class="cn">TRUE</span>, <span class="at">stars=</span><span class="st">"regress"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lavaanPlot</span>(keeley_sem1, <span class="at">coef=</span><span class="cn">TRUE</span>, <span class="at">stars=</span><span class="st">"regress"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -567,9 +615,13 @@ Model      0 363.4 380.9     0          0       0           </code></pre>
 </div>
 </div>
 <div id="tabset-9-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-2-tab">
-<p>In Python, …:</p>
+<p>The <code>semplot()</code> function provides a wrapper to the <code>graphviz</code> library (you will need to have this installed), and can be used to visualize the model. This will render in a Jupyter notebook or as an external file. (Note that <code>g</code> below is a graphviz object and can be modified.)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> semopy.semplot(mod, <span class="st">"test.png"</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>g</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;graphviz.graphs.Digraph object at 0x322c5f5f0&gt;</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -583,18 +635,18 @@ Model      0 363.4 380.9     0          0       0           </code></pre>
 <div class="tab-content" data-group="language">
 <div id="tabset-10-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-10-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="ot">=</span> </span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="st">'firesev ~ age</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="st">cover ~ firesev</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>keeley_sem2 <span class="ot">&lt;-</span> <span class="fu">sem</span>(keeley_formula, </span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> keeley,</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>                   <span class="at">meanstructure =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="ot">=</span> </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="st">'firesev ~ age</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="st">cover ~ firesev</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>keeley_sem2 <span class="ot">&lt;-</span> <span class="fu">sem</span>(keeley_formula, </span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> keeley,</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>                   <span class="at">meanstructure =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_sem2, </span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">standardize =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">rsq =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_sem2, </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">standardize =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">rsq =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>lavaan 0.6-18 ended normally after 1 iteration
 
@@ -641,14 +693,30 @@ R-Square:
 </div>
 </div>
 <div id="tabset-10-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-2-tab">
-<p>In Python, these are concatenated into a single line with line returns (<code>\n</code>) to separate the formula:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ firesev'</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>mod <span class="op">=</span> semopy.Model(keeley_formula)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> mod.fit(keeley)</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>mod.inspect()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      lval  op     rval  Estimate  Std. Err   z-value       p-value
+0  firesev   ~      age  0.059616  0.012352  4.826435  1.389991e-06
+1    cover   ~  firesev -0.083902  0.018201 -4.609770  4.031137e-06
+2  firesev  ~~  firesev  2.144243  0.319645  6.708204  1.970335e-11
+3    cover  ~~    cover  0.080476  0.011997  6.708204  1.970335e-11</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>semopy.calc_stats(mod)[[<span class="st">'chi2'</span>, <span class="st">'chi2 p-value'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           chi2  chi2 p-value
+Value  3.297465      0.192294</code></pre>
 </div>
 </div>
 </div>
 </div>
-<p>Now we get a value for the Chi-squared test of about 3.3, and a <span class="math inline">\(p\)</span>-value of about 0.07, which suggests there is no significant difference between this simpler model and the full covariance matrix. Or to put it more simply, dropping the path from <code>age</code> to <code>cover</code> has not made the model notably worse.</p>
+</div>
+<p>Now we get a value for the Chi-squared test of about 3.3, and a <span class="math inline">\(p\)</span>-value above 0.05, which suggests there is no significant difference between this simpler model and the full covariance matrix. Or to put it more simply, dropping the path from <code>age</code> to <code>cover</code> has not made the model notably worse.</p>
 </section>
 <section id="the-full-model" class="level4">
 <h4 class="anchored" data-anchor-id="the-full-model">The full model</h4>
@@ -657,7 +725,7 @@ R-Square:
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -668,20 +736,20 @@ R-Square:
 <div class="tab-content" data-group="language">
 <div id="tabset-11-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-11-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="ot">=</span> </span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="st">age ~ distance</span></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="st">hetero ~ distance</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="st">abiotic ~ distance</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="st">firesev ~ age</span></span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="st">cover ~ firesev</span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="st">rich ~ cover + hetero + abiotic + distance</span></span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="ot">=</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="st">age ~ distance</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="st">hetero ~ distance</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="st">abiotic ~ distance</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="st">firesev ~ age</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="st">cover ~ firesev</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="st">rich ~ cover + hetero + abiotic + distance</span></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-11-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-11-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'age ~ distance</span><span class="ch">\n</span><span class="st">hetero ~ distance</span><span class="ch">\n</span><span class="st">abiotic ~ distance</span><span class="ch">\n</span><span class="st">firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ firesev</span><span class="ch">\n</span><span class="st">rich ~ cover + hetero + abiotic + distance'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'age ~ distance</span><span class="ch">\n</span><span class="st">hetero ~ distance</span><span class="ch">\n</span><span class="st">abiotic ~ distance</span><span class="ch">\n</span><span class="st">firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ firesev</span><span class="ch">\n</span><span class="st">rich ~ cover + hetero + abiotic + distance'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -692,15 +760,15 @@ R-Square:
 <div class="tab-content" data-group="language">
 <div id="tabset-12-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-12-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>keeley_sem3 <span class="ot">&lt;-</span> <span class="fu">sem</span>(keeley_formula, </span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> keeley,</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">meanstructure =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>keeley_sem3 <span class="ot">&lt;-</span> <span class="fu">sem</span>(keeley_formula, </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> keeley,</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">meanstructure =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: lavaan-&gt;lav_data_full():  
    some observed variances are (at least) a factor 1000 times larger than 
    others; use varTable(fit) to investigate</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_sem3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_sem3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>lavaan 0.6-18 ended normally after 1 iteration
 
@@ -762,7 +830,34 @@ Variances:
 </div>
 <div id="tabset-12-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-12-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>mod <span class="op">=</span> semopy.Model(keeley_formula)</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> mod.fit(keeley)</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>mod.inspect()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       lval  op      rval    Estimate   Std. Err   z-value       p-value
+0       age   ~  distance   -0.395876   0.144576 -2.738183  6.177962e-03
+1    hetero   ~  distance    0.004499   0.001286  3.498238  4.683427e-04
+2   abiotic   ~  distance    0.399777   0.081389  4.911938  9.018049e-07
+3   firesev   ~       age    0.059678   0.012313  4.846912  1.253983e-06
+4     cover   ~   firesev   -0.083934   0.018190 -4.614244  3.945291e-06
+5      rich   ~     cover   13.626100   3.417470  3.987189  6.686079e-05
+6      rich   ~    hetero   44.282423  10.049588  4.406392  1.051067e-05
+7      rich   ~   abiotic    0.491382   0.158800  3.094346  1.972476e-03
+8      rich   ~  distance    0.485038   0.145445  3.334848  8.534589e-04
+9   abiotic  ~~   abiotic   45.961067   6.851471  6.708204  1.970335e-11
+10      age  ~~       age  145.028612  21.619589  6.708204  1.970335e-11
+11    cover  ~~     cover    0.080498   0.012000  6.708204  1.970335e-11
+12  firesev  ~~   firesev    2.143627   0.319553  6.708204  1.970335e-11
+13   hetero  ~~    hetero    0.011476   0.001711  6.708204  1.970335e-11
+14     rich  ~~      rich  104.311698  15.549870  6.708204  1.970335e-11</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>semopy.calc_stats(mod)[[<span class="st">'chi2'</span>, <span class="st">'chi2 p-value'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            chi2  chi2 p-value
+Value  20.871316      0.075513</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -774,9 +869,9 @@ Variances:
 <div id="tabset-13-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-13-1-tab">
 <p>In R, we can calculate these with <code>modificationIndices</code>. We’ll get these, sort for the largest index and print the top 5</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">modificationIndices</span>(keeley_sem3) <span class="sc">%&gt;%</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>mi) <span class="sc">%&gt;%</span></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">modificationIndices</span>(keeley_sem3) <span class="sc">%&gt;%</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>mi) <span class="sc">%&gt;%</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       lhs op    rhs    mi    epc sepc.lv sepc.all sepc.nox
 1   hetero ~~  cover 6.889 -0.008  -0.008   -0.277   -0.277
@@ -788,9 +883,7 @@ Variances:
 </div>
 </div>
 <div id="tabset-13-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-13-2-tab">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<p>The semopy package unfortunately does not currently have a function to calculate these.</p>
 </div>
 </div>
 </div>
@@ -800,24 +893,24 @@ Variances:
 <div class="tab-content" data-group="language">
 <div id="tabset-14-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-14-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="ot">=</span> </span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="st">age ~ distance</span></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="st">hetero ~ distance</span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="st">abiotic ~ distance</span></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a><span class="st">firesev ~ age</span></span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a><span class="st">cover ~ firesev + hetero</span></span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a><span class="st">rich ~ cover + hetero + abiotic + distance</span></span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
-<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>keeley_sem4 <span class="ot">&lt;-</span> <span class="fu">sem</span>(keeley_formula, </span>
-<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> keeley,</span>
-<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">meanstructure =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="ot">=</span> </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="st">age ~ distance</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a><span class="st">hetero ~ distance</span></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a><span class="st">abiotic ~ distance</span></span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a><span class="st">firesev ~ age</span></span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a><span class="st">cover ~ firesev + hetero</span></span>
+<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a><span class="st">rich ~ cover + hetero + abiotic + distance</span></span>
+<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>keeley_sem4 <span class="ot">&lt;-</span> <span class="fu">sem</span>(keeley_formula, </span>
+<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> keeley,</span>
+<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">meanstructure =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: lavaan-&gt;lav_data_full():  
    some observed variances are (at least) a factor 1000 times larger than 
    others; use varTable(fit) to investigate</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_sem4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_sem4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>lavaan 0.6-18 ended normally after 1 iteration
 
@@ -880,7 +973,36 @@ Variances:
 </div>
 <div id="tabset-14-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-14-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ age + firesev'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>keeley_formula <span class="op">=</span> <span class="st">'age ~ distance</span><span class="ch">\n</span><span class="st">hetero ~ distance</span><span class="ch">\n</span><span class="st">abiotic ~ distance</span><span class="ch">\n</span><span class="st">firesev ~ age</span><span class="ch">\n</span><span class="st">cover ~ firesev + hetero</span><span class="ch">\n</span><span class="st">rich ~ cover + hetero + abiotic + distance'</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>mod <span class="op">=</span> semopy.Model(keeley_formula)</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> mod.fit(keeley)</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>mod.inspect()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       lval  op      rval    Estimate   Std. Err   z-value       p-value
+0       age   ~  distance   -0.395884   0.144581 -2.738148  6.178627e-03
+1    hetero   ~  distance    0.004500   0.001286  3.498660  4.676024e-04
+2   abiotic   ~  distance    0.399846   0.081395  4.912440  8.994979e-07
+3   firesev   ~       age    0.059678   0.012313  4.846534  1.256371e-06
+4     cover   ~   firesev   -0.085841   0.017788 -4.825676  1.395294e-06
+5     cover   ~    hetero   -0.529902   0.256165 -2.068598  3.858379e-02
+6      rich   ~     cover   13.622034   3.466325  3.929821  8.500921e-05
+7      rich   ~    hetero   44.276342  10.215595  4.334191  1.462971e-05
+8      rich   ~   abiotic    0.491416   0.158783  3.094888  1.968870e-03
+9      rich   ~  distance    0.485102   0.145457  3.335023  8.529224e-04
+10  abiotic  ~~   abiotic   45.967631   6.852450  6.708204  1.970335e-11
+11      age  ~~       age  145.038118  21.621006  6.708204  1.970335e-11
+12    cover  ~~     cover    0.076849   0.011456  6.708204  1.970335e-11
+13  firesev  ~~   firesev    2.144067   0.319619  6.708204  1.970335e-11
+14   hetero  ~~    hetero    0.011476   0.001711  6.708204  1.970335e-11
+15     rich  ~~      rich  104.304465  15.548792  6.708204  1.970335e-11</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>semopy.calc_stats(mod)[[<span class="st">'chi2'</span>, <span class="st">'chi2 p-value'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            chi2  chi2 p-value
+Value  16.694584      0.161452</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -905,10 +1027,10 @@ Variances:
 <div class="tab-content" data-group="language">
 <div id="tabset-15-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-15-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>mosquito <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"./data/mosquito_nets.csv"</span>)</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>mosquito <span class="ot">&lt;-</span> mosquito <span class="sc">%&gt;%</span></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>id)</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(mosquito)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>mosquito <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"./data/mosquito_nets.csv"</span>)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>mosquito <span class="ot">&lt;-</span> mosquito <span class="sc">%&gt;%</span></span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>id)</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(mosquito)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>'data.frame':   1752 obs. of  9 variables:
  $ net         : logi  TRUE FALSE FALSE TRUE FALSE FALSE ...
@@ -923,23 +1045,23 @@ Variances:
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(mosquito)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(mosquito)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-40-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mosquito, <span class="fu">aes</span>(<span class="at">x =</span> net, <span class="at">y =</span> malaria_risk)) <span class="sc">+</span></span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mosquito, <span class="fu">aes</span>(<span class="at">x =</span> net, <span class="at">y =</span> malaria_risk)) <span class="sc">+</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -947,9 +1069,9 @@ Variances:
 </div>
 <div id="tabset-15-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-15-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>mosquito <span class="op">=</span> pd.read_csv(<span class="st">"./data/mosquito_nets.csv"</span>)</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>mosquito.drop(<span class="st">'id'</span>, axis<span class="op">=</span><span class="dv">1</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>mosquito.describe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>mosquito <span class="op">=</span> pd.read_csv(<span class="st">"./data/mosquito_nets.csv"</span>)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>mosquito.drop(<span class="st">'id'</span>, axis<span class="op">=</span><span class="dv">1</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>mosquito.describe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>           net_num  malaria_risk  ...  temperature   resistance
 count  1752.000000    1752.00000  ...  1752.000000  1752.000000
@@ -965,28 +1087,28 @@ max       1.000000      90.00000  ...    32.200000    95.000000
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>sns.pairplot(mosquito)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>sns.pairplot(mosquito)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-38-1.png" class="img-fluid figure-img" width="1106"></p>
+<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-43-1.png" class="img-fluid figure-img" width="1106"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-38-2.png" class="img-fluid figure-img" width="2160"></p>
+<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-43-2.png" class="img-fluid figure-img" width="2160"></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>sns.boxplot(mosquito, x<span class="op">=</span><span class="st">"net"</span>, y<span class="op">=</span><span class="st">"malaria_risk"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>sns.boxplot(mosquito, x<span class="op">=</span><span class="st">"net"</span>, y<span class="op">=</span><span class="st">"malaria_risk"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-39-5.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week6_files/figure-html/unnamed-chunk-44-5.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
