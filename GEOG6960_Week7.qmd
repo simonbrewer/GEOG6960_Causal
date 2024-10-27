@@ -60,7 +60,7 @@ x <- cor_sort(as.matrix(cor_res))
 plot(visualisation_recipe(x))
 ```
 
-### Three variable model
+### Three variable model 1
 
 Before building the full SEM for these data, we'll start with the simple three variable model that includes `age`, `firesev` and `cover`. To build the piecewise model, there are a couple of options: you can build the individual models within the piecewise function (`psem`) or you can build the individual models first, then use `psem` to link them. We'll use this second approach as it is a little easier to check what is going on. 
 
@@ -121,6 +121,111 @@ As you can see, the model object simply contains a list of the component models 
 ```{r}
 summary(keeley_psem1)
 ```
+
+And again, there's a lot of output. Let's go through this from top to bottom:
+
+- `Structural Equation Model`: this first section describes the models that were linked, as well as returning the AIC for the full PSEM model (note that this is the just the sum of the individual AICs)
+- `Tests of directed separation`: This section tests any missing paths in the model to see if excluding them is justified or not. As the model we have fit is just identified (or saturated), then there are no missing paths to test
+- `Global goodness-of-fit`: Two tests are presented here. The first is an approximation of the Chi-squared test used in covariance models. The second (Fisher's $C$) is based on the d-separation tests
+- `Coefficients`: a summary of the model coefficients, including standardized coefficients. This should give the same results as the summaries of the two individual `lm` models above
+- `Individual R-squared`: the variance explained for each endogenous variable
+
+In this case, the model is just identified, so the additional work of fitting the SEM cannot provide us with any additional information. 
+
+### Three variable model 2
+
+Now let's drop the path between `age` and `cover`, refit the models and re-run the PSEM. 
+
+```{r}
+mod1 <- lm(firesev ~ age, data = keeley)
+mod2 <- lm(cover ~ firesev, data = keeley)
+keeley_psem2 <- psem(
+  mod1, mod2,
+  data = keeley
+)
+```
+
+And now test the model (we'll suppresses the progress bar for the purposes of this document):
+
+```{r}
+summary(keeley_psem2, .progressBar = FALSE)
+```
+
+Now building the PSEM makes sense - we're able to test whether excluding the `age` to `cover` path makes sense. Both the Chi-squared and Fisher's $C$ test are non-significant, which indicates that there is no support for this path in the data, which in turn confirms that excluding it makes sense. This is also shown in the d-separation tests, which shows a test for this excluded path, and the lack of significance further supports the absence of this path. In fact, as we are only excluding a single path, the d-separation and Fisher's $C$ test are equal. 
+
+**piecewiseSEM** also comes with visualization function. We'll use it here to show the paths for this second model, as well as the unstandardized coefficients. (This is built on top of DiagrammeR, a general network visualization package in R, which can be used to further modify the plot.)
+
+```{r eval=FALSE}
+plot(keeley_psem2, show = "unstd")
+```
+
+![PSEM model](images/psem2.png)
+
+### Full model
+
+We'll finish this section by building the full Grace and Keeley model. The code below builds the individual models with the `psem` function to minimize the code, but you can try to build these first then link them together:
+
+```{r}
+keeley_psem3 <- psem(
+  lm(hetero ~ distance, data = keeley),
+  lm(abiotic ~ distance, data = keeley),
+  lm(age ~ distance, data = keeley),
+  lm(firesev ~ age, data = keeley),
+  lm(cover ~ firesev, data = keeley),
+  lm(rich ~ distance + abiotic + hetero + cover, data = keeley),
+  data = keeley
+)
+summary(keeley_psem3, .progressBar = FALSE)
+```
+
+And we'll show the plot with standardized coefficients to easier comparison between the paths:
+
+```{r eval=FALSE}
+plot(keeley_psem3, show = "std", ns_dashed = TRUE)
+```
+
+![PSEM model](images/psem3.png)
+
+There is, not surprisingly, much more output here. There are more individual models, more paths, and more *missing* paths as shown by the large number of d-separation tests. Note that, unlike the covariance approaches, this function uses the structure of the graph ito intuit the direction of the missing paths (i.e. it tests `firesev ~ distance` not the other way around). 
+
+The two global tests provide slightly different information this time. The Chi-squared test is significant, whereas $C$ is not (although it is close). From the d-sep tests, you should see that one missing path is flagged as significant. Try not to rebuild and test this SEM with the additional path added back in. Check the AIC of the previous model and this one to see whether including this appears to made an overall improvement. 
+
+### Nonlinear models
+
+next, we'll look very quickly at an example of including a non-linear model (a spline-based generalized additive model). We'll make a new version of the second 3-variable model, which includes paths from `age` to `firesev` and `firesev` to `cover`. For this, we'll add a nonlinear relationship for the first of these, based on the following scatterplot which shows a weakening of the link between these variables at higher values of `age`:
+
+```{r}
+ggplot(keeley, aes(x = age, y = firesev)) +
+  geom_point()
+```
+
+To do this, we'll use the `gam()` function from the library **mgcv**. We'll simply replace the first of the two models using this function and the `s()` to indicate using a smoothing spline to model the response of `firesev` to `age`:
+
+```{r message=FALSE}
+library(mgcv)
+mod1 <- gam(firesev ~ s(age), data = keeley)
+mod2 <- lm(cover ~ firesev, data = keeley)
+keeley_psem4 <- psem(
+  mod1, mod2,
+  data = keeley
+)
+summary(keeley_psem4, .progressBar = FALSE)
+```
+
+A couple of things to note here. This doesn't change the global model fit: these tests are based on the same missing path as the previous model. Second, there is no coefficient listed for the first model: as this is a nonlinear model, there is no single coefficient. If you want to see what this looks like, you can simply plot the individual model response:
+
+```{r}
+plot(keeley_psem4[[1]])
+```
+
+Let's finish this section by comparing the AIC of these two models to see if including the smoother improves overall model fit (despite the additional complexity):
+
+```{r}
+AIC(keeley_psem2, keeley_psem4)
+```
+
+
+
 
 # Appendix: Data files
 
