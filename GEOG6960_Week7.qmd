@@ -19,19 +19,112 @@ editor: visual
 ```{r}
 #| echo: false
 set.seed(42)
-library(reticulate)
-use_condaenv("causal")
 ```
 
 ## Introduction
 
-In this lab, we're going to explore how to build and test structural equation models (SEMs). We'll use two examples: - The Grace and Keeley fire/plant abundance dataset (*keeley.csv*) - The mosquito net usage dataset (*mosquito_nets.csv*)
+In this lab, we'll look at an alternative way of fitting structural equation models (SEMs) using a piecewise approach. This method was developed by Shipley and coworkers over the past 15 years, and has a number of advantages, mainly including a broader range of data types and structures within the SEM. We will use the same datasets as last week, and an addition set: 
 
+- The Grace and Keeley fire/plant abundance dataset (*keeley.csv*)
+- The mosquito net usage dataset (*mosquito_nets.csv*)
+- Shipley!!!
 
+As the name implies, this approach works by *piecing* together individual models, each of which describes one *endogenous* variable in the graph. This contrasts with the covariance-based approach of **lavaan** and **semopy** that try to estimate a single model of the covariance model underlying the system. As a result, each individual model can be built using different assumptions (generalized linear models, non-linear models, etc), and we will explore some of this here. 
+
+Currently, this approach is only available through the R library **piecewiseSEM** developed by Lefcheck (https://doi.org/10.1111/2041-210X.12512). It is possible to carry out a similar in other languages, but some of the tests and visualizations would require additional work. 
+
+## Grace and Keeley Dataset
+
+### Data and libraries
+
+As ever, let's start by loading the libraries we will need:
+
+```{r}
+library(tidyverse)
+library(correlation)
+library(piecewiseSEM)
+```
+
+Now load the dataset:
+
+```{r}
+keeley <- read.csv("./data/keeley.csv")
+str(keeley)
+```
+
+And let's plot the correlation matrix: 
+
+```{r}
+cor_res <- correlation(keeley)
+x <- cor_sort(as.matrix(cor_res))
+plot(visualisation_recipe(x))
+```
+
+### Three variable model
+
+Before building the full SEM for these data, we'll start with the simple three variable model that includes `age`, `firesev` and `cover`. To build the piecewise model, there are a couple of options: you can build the individual models within the piecewise function (`psem`) or you can build the individual models first, then use `psem` to link them. We'll use this second approach as it is a little easier to check what is going on. 
+
+As a reminder, this is the DAG for the three variable model, as a partially mediated model:
+
+```{r echo = FALSE}
+library(ggdag)
+grace_dag <- dagify(firesev ~ age,
+                    cover ~ age + firesev,
+                    coords = list(x = c(age = 1,
+                                        firesev = 2,
+                                        cover = 3), 
+                                  y = c(age = 1,
+                                        firesev = 2,
+                                        cover = 1)
+                    ),
+                    exposure = "age",
+                    outcome = "cover",
+                    labels = c(age = "Stand age", 
+                               firesev = "Fire severity", 
+                               cover = "Plant cover")
+)
+ggdag(grace_dag, use_labels = "label", text = FALSE) +
+  theme_dag()
+```
+
+The two endogenous variables are fire severity (`firesev`) and canopy cover (`cover`), so let's build the two models that describe these according to the DAG using simple OLS linear regression:
+
+```{r}
+mod1 <- lm(firesev ~ age, data = keeley)
+mod2 <- lm(cover ~ age + firesev, data = keeley)
+```
+
+As these are just basic linear models, you can use all the usual functions to check them and get more information. Here is the summary output for them:
+
+```{r}
+summary(mod1)
+```
+
+```{r}
+summary(mod2)
+```
+
+Both models explain about 20% of the variance in the outcome, which is not great, but the coefficients and models do show significance. 
+
+Now, we'll build the piecewise SEM. This does not require refitting the models, but instead links them together to allow for testing. 
+
+```{r}
+keeley_psem1 <- psem(
+  mod1, mod2,
+  data = keeley
+)
+keeley_psem1
+```
+
+As you can see, the model object simply contains a list of the component models and a brief overview of the data. To test the overall SEM, we need to use the `summary` function:
+
+```{r}
+summary(keeley_psem1)
+```
 
 # Appendix: Data files
 
-## Grace and Keely dataset *keeley.csv*
+## Grace and Keeley dataset *keeley.csv*
 
 | Column header | Variable                 |
 |---------------|--------------------------|
