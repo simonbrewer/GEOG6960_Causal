@@ -23,11 +23,10 @@ set.seed(42)
 
 ## Introduction
 
-In this lab, we'll look at an alternative way of fitting structural equation models (SEMs) using a piecewise approach. This method was developed by Shipley and coworkers over the past 15 years, and has a number of advantages, mainly including a broader range of data types and structures within the SEM. We will use the same datasets as last week, and an addition set: 
+In this lab, we'll look at an alternative way of fitting structural equation models (SEMs) using a piecewise approach. This method was developed by Shipley and coworkers over the past 15 years, and has a number of advantages, mainly including a broader range of data types and structures within the SEM. We will use the following datasets: 
 
 - The Grace and Keeley fire/plant abundance dataset (*keeley.csv*)
-- The mosquito net usage dataset (*mosquito_nets.csv*)
-- Shipley!!!
+- A data set of tree mortality from Shipley (2009): *shipley.csv*
 
 As the name implies, this approach works by *piecing* together individual models, each of which describes one *endogenous* variable in the graph. This contrasts with the covariance-based approach of **lavaan** and **semopy** that try to estimate a single model of the covariance model underlying the system. As a result, each individual model can be built using different assumptions (generalized linear models, non-linear models, etc), and we will explore some of this here. 
 
@@ -43,6 +42,10 @@ As ever, let's start by loading the libraries we will need:
 library(tidyverse)
 library(correlation)
 library(piecewiseSEM)
+library(lme4)
+library(mgcv)
+library(sf)
+library(tmap)
 ```
 
 Now load the dataset:
@@ -202,7 +205,6 @@ ggplot(keeley, aes(x = age, y = firesev)) +
 To do this, we'll use the `gam()` function from the library **mgcv**. We'll simply replace the first of the two models using this function and the `s()` to indicate using a smoothing spline to model the response of `firesev` to `age`:
 
 ```{r message=FALSE}
-library(mgcv)
 mod1 <- gam(firesev ~ s(age), data = keeley)
 mod2 <- lm(cover ~ firesev, data = keeley)
 keeley_psem4 <- psem(
@@ -224,6 +226,234 @@ Let's finish this section by comparing the AIC of these two models to see if inc
 AIC(keeley_psem2, keeley_psem4)
 ```
 
+## Generalized and mixed effects models
+
+For this example, we'll use a synthetic dataset of tree growth and survival from Shipley's 2009 paper. These data are longitudinal, with repeated observations for each tree. The trees are also grouped by site (there are 20 sites). The model that we will fit follows this graph:
+
+```{r}
+shipley_dag <- dagify(DD ~ lat,
+                      date ~ DD,
+                      growth ~ date,
+                      live ~ growth,
+                      coords = list(x = c(lat = 1,
+                                          DD = 2,
+                                          date = 3,
+                                          growth = 4,
+                                          live = 5), 
+                                    y = c(lat = 1,
+                                          DD = 2,
+                                          date = 3,
+                                          growth = 2,
+                                          live = 1)
+                      ),
+                      labels = c(lat = "Latitude",
+                                 DD = "Degree Day",
+                                 date = "Date",
+                                 growth = "Growth",
+                                 live = "Live")
+)
+ggdag(shipley_dag, use_labels = "label", 
+      text = FALSE) +
+  theme_dag()
+```
+
+The DAG represents the following processes (taken from Shipley (2009)): 
+
+> Latitude and year generate the number of degree-days at each site. Degree-days then cause the date of bud burst of a tree species. The date of bud burst causes the amount of diameter growth, and diameter growth determines the survival in the subsequent winter
+
+```{r}
+shipley %>%
+  mutate(tree = as.factor(tree),
+         site = as.factor(site)) %>%
+  ggplot(aes(x = year, y = Growth, col = tree)) + 
+  geom_line() +
+  facet_wrap(~site) +
+  theme_bw()  + theme(legend.position = "none")
+```
+
+There are two additional complexities with these data. 
+
+First, the outcome we want to model is a binary variable (1 = live in a given year, 0 = dead). The appropriate model for these data is a binomial model with a logit link function. 
+
+The second is that the data are grouped: we have repeated observations by tree (for multiple year) and by site (for multiple trees). To account for this structure, we would need to include random effects for both site and tree. 
+
+We'll use R's **lme4** library to build these models. For the first three paths, we'll assume a linear reponse, so we can use the `lmer()` function. Random effects are included by the following syntax `+ (1 | g)` where `g` is the grouping variable (site or tree here). 
+
+```{r warning=FALSE}
+mod1 <- lmer(DD ~ lat + (1 | tree) + (1 | site), data = shipley)
+mod2 <- lmer(Date ~ DD + (1 | tree) + (1 | site), data = shipley)
+mod3 <- lmer(Growth ~ Date + (1 | tree) + (1 | site), data = shipley)
+```
+
+As before, you can check any of the individual models with the `summary()` function or any other standard diagnostics.
+
+```{r}
+summary(mod1)
+```
+
+For the `Live` variable, we'll need to specify a binomial model using `glmer`, with appropriate `family` arguments
+
+```{r}
+mod4 <- glmer(Live ~ Growth + (1 | tree) + (1 | site), 
+              family = binomial(link = "logit"), data = shipley)
+```
+
+We can now link all of these using `psem` to create the PSEM:
+
+```{r}
+shipley_psem1 <- psem(
+  mod1, mod2, mod3, mod4,
+  data = shipley
+)
+```
+
+
+```{r warning=FALSE}
+summary(shipley_psem1, .progressBar = FALSE)
+```
+
+Some things to note in this output:
+
+- You will like have seen some warnings about singular fits: this suggests that some of the models that include the d-separated variable paths could not be fit well, and may suggest that some data standardization is necessary. 
+- With that caveat in mind, none of the missing paths were significant
+- Fisher's $C$ supports this, suggesting that the model (and DAG) and well supported by the data
+- The Chi-squared test cannot be calculated due to the presence of the binomial model
+- The coefficient shown for the binomial model (`~0.348`) is on the logit scale (from the binomial model). To convert this to odds, simply take the anti-log (`exp`), which should give you a value of approximately 1.4, indicating an increasing survival probability with higher growth. 
+
+![PSEM model](images/psem4.png)
+
+## Spatial models
+
+As a last example, we'll look at the use of spatial models within piecewiseSEM. As a reminder, our concern with spatial models is that the errors or residuals will be autocorrelated, which implies that the standard errors and model $p$-values will be biased. Incorporating spatial covariance can then help to accoutn for this. To illustrate, we'll use a data set of (more!) trees taken from a forest plot from the Volzhsko-Kamsky reserve in Russia. This example is lightly modified from Jed Byrnes' SEM workshop (https://jebyrnes.github.io/semclass). Let's start by reading in the data:
+
+```{r}
+boreal <- read.csv("./data/boreal.csv")
+head(boreal)
+```
+
+And let's convert this to a simple feature (spatial) object for plotting:
+
+```{r}
+boreal_sf <- st_as_sf(boreal, coords = c("x", "y"))
+```
+
+```{r warning=FALSE}
+tm_shape(boreal_sf) +
+  tm_symbols(col = "NDVI", palette = "Greens")
+```
+
+
+Here's the DAG for these data (it's simplifed from the full dataset). This implies some of the following processes:
+
+- Warmer temperatures increase richness and productivity (NDVI)
+- Wetter habitats (more negative `wet`) increase productivity
+- Higher richness increases productivity
+
+```{r echo=FALSE}
+boreal_dag <- dagify(richness ~ temp,
+                     NDVI ~ temp + wet + richness,
+                     coords = list(x = c(temp = 1, 
+                                         wet = 1, 
+                                         richness = 2,
+                                         NDVI = 2),
+                                   y = c(temp = 2, 
+                                         wet = 1, 
+                                         richness = 2,
+                                         NDVI = 1)))
+
+ggdag(boreal_dag) +
+  theme_dag()
+```
+
+Let's now fit this model. We'll start with aspatial models for the two endogenous variables (`richness` and `NDVI`)
+
+```{r}
+mod1 <- lm(richness ~ temp, data = boreal)
+mod2 <- lm(NDVI ~ richness + temp + wet, data = boreal)
+boreal_psem1 <- psem(
+  mod1, mod2,
+  data = boreal
+)
+```
+
+```{r}
+summary(boreal_psem1, .progressBar = FALSE)
+```
+
+
+
+```{r}
+boreal_sf$ols_res <- residuals(boreal_psem1)[,2]
+tm_shape(boreal_sf) +
+  tm_symbols(col = "ols_res")
+```
+
+```{r}
+distMat <- as.matrix(dist(
+  cbind(boreal$x, boreal$y))
+)
+
+distsInv <- 1/distMat
+diag(distsInv) <- 0
+```
+
+```{r}
+library(ape)
+Moran.I(boreal_sf$ols_res, distsInv)
+```
+
+```{r}
+richness_gls <- gls(richness ~ temp,
+                    data = boreal)
+plot(Variogram(richness_gls, form = ~x + y, 
+               robust = TRUE, maxDist = 2000, 
+               resType = "pearson"))
+```
+
+```{r}
+ndvi_gls<- gls(NDVI ~ richness + temp + wet,
+               data = boreal)
+plot(Variogram(ndvi_gls, form = ~x + y, 
+               robust = TRUE, maxDist = 2000, 
+               resType = "pearson"))
+```
+
+```{r}
+#Fit using spatial autocorrelation
+spaceCor <- corExp(form =~ x+y, nugget = TRUE)
+```
+
+```{r}
+richness_gls <- gls(richness ~ temp,
+                    correlation = spaceCor,
+                    data = boreal)
+plot(Variogram(richness_gls, form = ~x + y, 
+               robust = TRUE, maxDist = 2000, 
+               resType = "normalized"))
+```
+
+```{r}
+ndvi_gls<- gls(NDVI ~ richness + temp + wet,
+               correlation = spaceCor,
+               data=boreal)
+plot(Variogram(ndvi_gls, form = ~x + y, 
+               robust = TRUE, maxDist = 2000, 
+               resType = "normalized"))
+```
+
+```{r}
+boreal_psem2 <- psem(
+  richness_gls,
+  ndvi_gls,
+  data = boreal
+)
+summary(boreal_psem2)
+```
+
+```{r}
+plot(boreal_psem2)
+```
+
 
 
 
@@ -242,19 +472,32 @@ AIC(keeley_psem2, keeley_psem4)
 | cover         | Cover of plants          |
 | rich          | Plant species richness   |
 
-## Mosquito net usage dataset *mosquito_nets.csv*
+## Shipley dataset *shipley.csv*
 
-Taken from https://github.com/r-causal/causalworkshop
+This is a synthetic dataset on tree growth and survival. 
 
-| Column header | Variable                                                          |
-|------------------------------------|------------------------------------|
-| id            | observation ID                                                    |
-| net           | Did the household use nets (F/T)                                  |
-| net_num       | Did the household use nets (0/1)                                  |
-| malaria_risk  | likelihood that someone in the household will be infected (0-100) |
-| income        | Monthly income (\$)                                               |
-| health        | Self-reported healthiness (0-100)                                 |
-| household     | Number of people living in the household                          |
-| eligible      | Eligibility for the free net program (0/1)                        |
-| temperature   | Average temperature at night (C)                                  |
-| resistance    | Resistance of mosquito strains to insecticide                     |
+| Column header | Variable                 |
+|---------------|--------------------------|
+| site      | Site of observation    |
+| tree          | Tree ID         |
+| lat       | Site latitude     |
+| year           | Year of observation |
+| Date        | Date of first bud burst       |
+| DD       | Cumulative degree days until first bud burst |
+| Growth         | Annual increase in stem diameter |
+| Survival          | Proportional survival  |
+| Live          | Alive (1) or dead (0) |
+
+## Boreal dataset *boreal.csv*
+
+This dataset is taken from Alain Zuur's book "Mixed Effects Models and Extensions in Ecology with R"
+
+| Column header | Variable                 |
+|---------------|--------------------------|
+| point      | Point ID    |
+| x          | Easting        |
+| y       | Northing     |
+| richness           | Species richness |
+| NDVI        | NDVI       |
+| temp       | Soil temperature |
+| wet         | Moisture index |
