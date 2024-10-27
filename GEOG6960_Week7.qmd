@@ -1,0 +1,62 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 7"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 260 Central Campus Drive
+        city: Salt Lake City
+        state: UT
+        postal-code: 84112
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to explore how to build and test structural equation models (SEMs). We'll use two examples: - The Grace and Keeley fire/plant abundance dataset (*keeley.csv*) - The mosquito net usage dataset (*mosquito_nets.csv*)
+
+
+
+# Appendix: Data files
+
+## Grace and Keely dataset *keeley.csv*
+
+| Column header | Variable                 |
+|---------------|--------------------------|
+| distance      | Distance to coast (m)    |
+| elev          | Elevation a.s.l.         |
+| abiotic       | Abiotic favorability     |
+| age           | Age of stand before fire |
+| hetero        | Plot heterogeneity       |
+| firesev       | Severity of fire         |
+| cover         | Cover of plants          |
+| rich          | Plant species richness   |
+
+## Mosquito net usage dataset *mosquito_nets.csv*
+
+Taken from https://github.com/r-causal/causalworkshop
+
+| Column header | Variable                                                          |
+|------------------------------------|------------------------------------|
+| id            | observation ID                                                    |
+| net           | Did the household use nets (F/T)                                  |
+| net_num       | Did the household use nets (0/1)                                  |
+| malaria_risk  | likelihood that someone in the household will be infected (0-100) |
+| income        | Monthly income (\$)                                               |
+| health        | Self-reported healthiness (0-100)                                 |
+| household     | Number of people living in the household                          |
+| eligible      | Eligibility for the free net program (0/1)                        |
+| temperature   | Average temperature at night (C)                                  |
+| resistance    | Resistance of mosquito strains to insecticide                     |
