@@ -32,16 +32,23 @@ Often in scientific studies we are interested in establishing a cause and effect
     - [Lab notes][lab5]
 - Week 6
     - [Lab notes][lab6]
+- Week 7
+    - [Lab notes][lab7]
 
 # Data
 
 - Grace and Keely dataset ([keeley.csv][keeley])
 - Mosquito net dataset ([mosquito_nets.csv][mosquito])
+- Shipley tree mortality dataset ([shipley.csv][shipley])
+- Boreal NDVI dataset ([boreal.csv][boreal])
 
 [lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
 [lab3]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week3.html
 [lab5]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week5.html
 [lab6]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week6.html
+[lab7]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week7.html
 
 [keeley]: https://drive.google.com/file/d/1_pOumBe6a783Jap4oyQlF0uJ_IwmjqpZ/view?usp=drive_link
 [mosquito]: https://drive.google.com/file/d/1TbscKcYSuDhOg_FPhb5faIPyNGuNdTUA/view?usp=sharing
+[shipley]: https://drive.google.com/file/d/14MNcR3IT2GsVvHAb1P2r5gZAmiIjoomZ/view?usp=sharing
+[boreal]: https://drive.google.com/file/d/1Kl_nqCETZyg92RL2lVdtGaWcfSDcXE_x/view?usp=sharing
