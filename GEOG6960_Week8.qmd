@@ -1,0 +1,95 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 8"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 260 Central Campus Drive
+        city: Salt Lake City
+        state: UT
+        postal-code: 84112
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to test methods for causal discovery. We'll use a synthetic example, and a quick test with the Grace and Keeley fire/plant abundance dataset (*keeley.csv*).
+
+## Causal discovery
+
+There are a range of packages with algorithms for causal discovery in both R and Python. Here, we'll use:
+
+- R: **causalDisco** - this packages builds on and integrates functions from a set of other packages, mainly from the Bioconductor repository. Installation instructions are given below. 
+- Python: **causal-learn** - we'll this as it is part of a larger Python ecosystem for causal analysis. Other packages include **gcastle** and **cdt**, the Causal Discovery Toolbox 
+
+First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
+
+::: {.panel-tabset group="language"}
+# R
+
+The **causalDisco** library has a fairly large number of dependencies, including packages that are not part of the standard CRAN system. You'll need to run (at least) the following commands *after* installing **casualDisco** to get all the appropriate functions. These are all part of the Bioconductor repository to be installed first from here:
+
+https://www.bioconductor.org/
+
+Once you've installed this, install the following:
+
+- `BiocManager::install("graph")`
+- `BiocManager::install("RBGL")`
+- `BiocManager::install("Rgraphviz")`
+
+Now try loading the packages. If you get errors, please let me know
+
+```{r}
+#| output: false
+library(tidyverse)
+library(ggpubr)
+library(dagitty)
+library(ggdag)
+library(GGally)
+library(casualDisco)
+```
+
+# Python
+
+```{python}
+import numpy as np
+import pandas as pd
+import seaborn as sns
+```
+:::
+
+## Example 1
+
+### Data
+
+Let's start by loading the Grace and Keeley dataset and exploring the values. There are (or should be) 8 variables (described in the appendix below). Note that this differs a little from the dataset used in the paper - there is an additional field (`elev`) which we will drop, and the community type variable is missing. Later, we'll adjust the DAG that we use as a basis for the model accordingly.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley <- read.csv("./data/keeley.csv")
+keeley <- keeley %>%
+  select(-elev)
+str(keeley)
+```
+
+# Python
+
+```{python}
+# keeley = pd.read_csv("./data/keeley.csv")
+```
+:::
+
