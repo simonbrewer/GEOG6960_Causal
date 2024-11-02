@@ -39,7 +39,7 @@ First load (or install and load) the relevant packages. We'll need some addition
 ::: {.panel-tabset group="language"}
 # R
 
-The **causalDisco** library has a fairly large number of dependencies, including packages that are not part of the standard CRAN system. You'll need to run (at least) the following commands *after* installing **casualDisco** to get all the appropriate functions. These are all part of the Bioconductor repository to be installed first from here:
+The **pcalg** library has a fairly large number of dependencies, including packages that are not part of the standard CRAN system. You'll need to run (at least) the following commands *after* installing **pcalg** to get all the appropriate functions. These are all part of the Bioconductor repository to be installed first from here:
 
 https://www.bioconductor.org/
 
@@ -58,7 +58,7 @@ library(ggpubr)
 library(dagitty)
 library(ggdag)
 library(GGally)
-library(casualDisco)
+library(pcalg)
 ```
 
 # Python
@@ -74,22 +74,188 @@ import seaborn as sns
 
 ### Data
 
-Let's start by loading the Grace and Keeley dataset and exploring the values. There are (or should be) 8 variables (described in the appendix below). Note that this differs a little from the dataset used in the paper - there is an additional field (`elev`) which we will drop, and the community type variable is missing. Later, we'll adjust the DAG that we use as a basis for the model accordingly.
+First, we're going to create a synthetic dataset, based on the following 'true' DAG. This is the structure that we will try to discover later on:
+
+```{r echo = FALSE}
+dag <- dagitty('dag {
+bb="0,0,1,1"
+A [pos="0.150,0.250"]
+B [pos="0.150,0.650"]
+C [pos="0.450,0.450"]
+D [pos="0.750,0.450"]
+A -> C
+B -> C
+C -> D
+}
+'
+)
+# plot(dag)
+ggdag(dag) + theme_dag()
+```
+
+Note that this implies the following adjacency matrix, where each row represents an origin node, and each column a destination node:
+
+$$
+A_{G} =
+\begin{bmatrix}
+0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 \\
+\end{bmatrix}
+$$
+
+This will have 4 variables, which we will create as follows:
+
+- `a` a randomly distributed exogenous variable: $a ~ N(0, 1)$
+- `b` a randomly distributed exogenous variable: $a ~ N(0, 1)$
+- `c` an endogenous variable 'caused' by `a` and `b`: $c = 0.3\times a + 0.2 \times b + N(0, 0.01)$
+- `d` the outcome variable 'caused' by `c`: $d = 0.8 \times c + N(0, 0.01)$
+
+If you want to make this more complex, uncomment the line that creates the variable `e`. This will add an additional collider to the DAG. 
 
 ::: {.panel-tabset group="language"}
 # R
 
 ```{r}
-keeley <- read.csv("./data/keeley.csv")
-keeley <- keeley %>%
-  select(-elev)
-str(keeley)
+set.seed(1)
+n <- 10000
+a <- rnorm(n) 
+b <- rnorm(n) 
+c <- 0.3*a + 0.2*b + rnorm(n, 0, 0.01)
+d <- 0.8*c + rnorm(n, 0, 0.01)
+# e <- -0.4*a + -0.4*d + rnorm(n, 0, 0.01)
+df <- data.frame(a,b,c,d)
 ```
 
 # Python
 
 ```{python}
-# keeley = pd.read_csv("./data/keeley.csv")
+np.random.seed(1)
+n = 10000
+a = np.random.normal(0, 1, n)
+b = np.random.normal(0, 1, n)
+c = 0.3*a + 0.2*b + np.random.normal(0, 0.01, n)
+d = 0.8*c + np.random.normal(0, 0.01, n)
+
+df = pd.DataFrame({'a': a,
+                   'b': b,
+                   'c': c,
+                   'd': d})
 ```
 :::
 
+As usual, we'll do a little exploration of the data before moving on. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggpairs(df)
+```
+
+# Python
+
+```{python}
+sns.pairplot(df)
+```
+:::
+
+And here's the covariance and correlation matrices:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+# Covariance
+cov(df)
+```
+
+```{r}
+# Correlation
+cor(df)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+```{python}
+df.corr()
+```
+:::
+
+## Peters-Clark algorithm
+
+We'll first estimate the causal graph using the Peters-Clark (PC) algorithm. This starts by creating a fully connected, but undirected graph. Then:
+
+- Edges are removed between variables that are unconditionally independent (i.e. no existing covariance)
+- Edges are removed between variables that are conditionally independent (i.e. no existing covariance given other nodes)
+- Colliders are identified and directed
+- The direction of remaining links is established
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, the function we will use is `pc()`. Before running this, we need to create a list with summary statistics for the algorithm. For PC, we need the correlation matrix and the number of observations in the dataset. These will be used to assess the first step:
+
+```{r}
+df_stats <- list(C = cor(df), n = nrow(df))
+```
+
+With this, we can then run the PC algorithm. This takes as arguments:
+
+- The list of summary statistics
+- A predefined function to test for independence (`gaussCItest` for normally distributed variables)
+- The threshold for inclusion (correlations below this threshold will be excluded)
+
+```{r}
+df_pc <- pc(df_stats, labels = names(df),
+            indepTest = gaussCItest, alpha = 0.01)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+:::
+
+Let's examine the output:
+
+::: {.panel-tabset group="language"}
+# R
+
+The 'discovered' adjacency matrix is shown in the `summary()` output. Compare this to the known matrix above.
+
+```{r}
+summary(df_pc)
+```
+
+You can also visualize the resulting graph:
+
+```{r message=FALSE, warning=FALSE}
+plot(df_pc@graph)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+:::
+
+
+## Greedy Equivalence Search algorithm
+
+We'll first estimate the causal graph using the Peters-Clark (PC) algorithm. Starting from a graph with all the nodes but no edges, this will iterate through three stages:
+
+- Forwards: edges are added until no further improvement is obtained
+- Backwards: edges are removed until no further improvement is obtained
+- Turning: edges are reversed until no further improvement is obtained
+
+The *improvement* is measured by a score, in this case the Bayesian Information Criterion (BIC). 
