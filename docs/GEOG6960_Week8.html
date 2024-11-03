@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Simon Brewer">
-<meta name="dcterms.date" content="2024-11-02">
+<meta name="dcterms.date" content="2024-11-03">
 
 <title>GEOG 6960 Causality in Geog. Studies 8</title>
 <style>
@@ -185,7 +185,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 2, 2024</p>
+      <p class="date">November 3, 2024</p>
     </div>
   </div>
   
@@ -211,7 +211,7 @@ window.Quarto = {
 <p>There are a range of packages with algorithms for causal discovery in both R and Python. Here, we’ll use:</p>
 <ul>
 <li>R: <strong>causalDisco</strong> - this packages builds on and integrates functions from a set of other packages, mainly from the Bioconductor repository. Installation instructions are given below.</li>
-<li>Python: <strong>causal-learn</strong> - we’ll this as it is part of a larger Python ecosystem for causal analysis. Other packages include <strong>gcastle</strong> and <strong>cdt</strong>, the Causal Discovery Toolbox</li>
+<li>Python: <strong>gcastle</strong>. Other packages include <strong>causal-learn</strong> and <strong>cdt</strong>, the Causal Discovery Toolbox</li>
 </ul>
 <p>First load (or install and load) the relevant packages. We’ll need some additional packages to explore the data before model building.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
@@ -238,10 +238,13 @@ window.Quarto = {
 </div>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<p>Install <strong>gcastle</strong> (<code>pip install gcastle</code>) before going further. You’ll also need the <strong>networkx</strong> package to visualize the results.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -300,11 +303,12 @@ A_{G} =
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> np.random.normal(<span class="dv">0</span>, <span class="dv">1</span>, n)</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> <span class="fl">0.3</span><span class="op">*</span>a <span class="op">+</span> <span class="fl">0.2</span><span class="op">*</span>b <span class="op">+</span> np.random.normal(<span class="dv">0</span>, <span class="fl">0.01</span>, n)</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="fl">0.8</span><span class="op">*</span>c <span class="op">+</span> np.random.normal(<span class="dv">0</span>, <span class="fl">0.01</span>, n)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame({<span class="st">'a'</span>: a,</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'b'</span>: b,</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'c'</span>: c,</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'d'</span>: d})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># e = -0.4*a + -0.4*d + np.random.normal(0, 0.01, n)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame({<span class="st">'a'</span>: a,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'b'</span>: b,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'c'</span>: c,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'d'</span>: d})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -428,15 +432,18 @@ d  0.833262  0.564101  0.999405  1.000000</code></pre>
 </div>
 </div>
 <div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+<p>The <strong>gcastle</strong> package has a module <code>algorithms</code> that holds the various search function. We’ll import <code>PC()</code> from this for the Peters-Clark algorithm, and instantiate it. Note that there are several options that can be set at this point, including the threshold for inclusion of edges (<code>alpha</code>) and the test used (<code>ci_test</code>)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>df.cov()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> castle.algorithms <span class="im">import</span> PC</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>          a         b         c         d
-a  0.997673  0.015685  0.302499  0.241931
-b  0.015685  1.002480  0.205238  0.164176
-c  0.302499  0.205238  0.131922  0.105515
-d  0.241931  0.164176  0.105515  0.084495</code></pre>
+<pre><code>2024-11-03 13:34:10,268 - /opt/homebrew/Caskroom/miniforge/base/envs/causal/lib/python3.12/site-packages/castle/backend/__init__.py[line:36] - INFO: You can use `os.environ['CASTLE_BACKEND'] = backend` to set the backend(`pytorch` or `mindspore`).
+2024-11-03 13:34:10,405 - /opt/homebrew/Caskroom/miniforge/base/envs/causal/lib/python3.12/site-packages/castle/algorithms/__init__.py[line:36] - INFO: You are using ``pytorch`` as the backend.</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>pc <span class="op">=</span> PC(alpha<span class="op">=</span><span class="fl">0.05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we can use the <code>learn()</code> function from this object with the data we made earlier. This needs as input the data corresponding to each node, either as a Pandas dataframe or a numpy array.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pc.learn(df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -448,7 +455,7 @@ d  0.241931  0.164176  0.105515  0.084495</code></pre>
 <div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
 <p>The ‘discovered’ adjacency matrix is shown in the <code>summary()</code> output. Compare this to the known matrix above.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(df_pc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(df_pc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Object of class 'pcAlgo', from Call:
 pc(suffStat = df_stats, indepTest = gaussCItest, alpha = 0.01, 
@@ -474,30 +481,70 @@ d . . . .</code></pre>
 </div>
 <p>You can also visualize the resulting graph:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df_pc<span class="sc">@</span>graph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df_pc<span class="sc">@</span>graph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 </div>
 <div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
+<p>The ‘discovered’ adjacency matrix is shown in the <code>summary()</code> output. Compare this to the known matrix above.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>df.cov()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>pc.causal_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>          a         b         c         d
-a  0.997673  0.015685  0.302499  0.241931
-b  0.015685  1.002480  0.205238  0.164176
-c  0.302499  0.205238  0.131922  0.105515
-d  0.241931  0.164176  0.105515  0.084495</code></pre>
+<pre><code>Tensor([[0, 0, 1, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]])</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> castle.common <span class="im">import</span> GraphDAG</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>GraphDAG(pc.causal_matrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;castle.common.plot_dag.GraphDAG object at 0x39b8a4dd0&gt;</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="384"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>You can also visualize the resulting graph with the <strong>networkx</strong> package. We’ll create a function here to do this for the next example as well:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_graph_with_labels(adjacency_matrix, mylabels, mypos<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    rows, cols <span class="op">=</span> np.where(adjacency_matrix <span class="op">==</span> <span class="dv">1</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    edges <span class="op">=</span> <span class="bu">zip</span>(rows.tolist(), cols.tolist())</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    gr <span class="op">=</span> nx.DiGraph()</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    gr.add_edges_from(edges)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> mypos <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>        nx.draw(gr, node_size<span class="op">=</span><span class="dv">500</span>, labels<span class="op">=</span>mylabels, pos<span class="op">=</span>mypos, with_labels<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>        nx.draw(gr, node_size<span class="op">=</span><span class="dv">500</span>, labels<span class="op">=</span>mylabels, with_labels<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>node_labels <span class="op">=</span> {<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="dv">3</span>: <span class="st">'d'</span>}</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>node_pos <span class="op">=</span> {<span class="dv">0</span>: (<span class="dv">0</span>, <span class="dv">0</span>), <span class="dv">1</span>: (<span class="dv">0</span>, <span class="dv">2</span>), <span class="dv">2</span>: (<span class="dv">1</span>, <span class="dv">1</span>), <span class="dv">3</span>: (<span class="dv">2</span>, <span class="dv">1</span>)}</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>show_graph_with_labels(pc.causal_matrix,  mylabels <span class="op">=</span> node_labels, mypos <span class="op">=</span> node_pos)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-22-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
 </div>
 </div>
 </div>
 </div>
 </div>
+</div>
+<p>Looks pretty good right? Try re-running this changing some of the algorithm options (particularly <code>alpha</code>, the threshold for rejecting edges).</p>
 </section>
 <section id="greedy-equivalence-search-algorithm" class="level2">
 <h2 class="anchored" data-anchor-id="greedy-equivalence-search-algorithm">Greedy Equivalence Search algorithm</h2>
@@ -514,11 +561,11 @@ d  0.241931  0.164176  0.105515  0.084495</code></pre>
 <div id="tabset-7-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-7-1-tab">
 <p>In R, this requires first setting up the score function. <code>GaussL0penObsScore</code> is a general function for this, which by default will estimate the Bayesian Information Criterion. This also takes an argument (<code>lambda</code>) to change the weighting (default is <span class="math inline">\(log(n)/2\)</span>). Setting this to higher values will penalize against more complex graphs.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>score <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"GaussL0penObsScore"</span>, df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>score <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"GaussL0penObsScore"</span>, df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we can estimate the causal structure using the <code>ges()</code> function (setting <code>verbose=TRUE</code> displays the progress through the different steps described above):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>df_ges <span class="ot">&lt;-</span> <span class="fu">ges</span>(score, <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>df_ges <span class="ot">&lt;-</span> <span class="fu">ges</span>(score, <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Casting graph...
 Casting options...
@@ -540,7 +587,7 @@ Performing GIES...
 <p>The resulting object contains the ‘discovered’ graph:</p>
 <p>Which can be convert to an adjacency matrix for comparison:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as</span>(<span class="fu">as</span>(df_ges<span class="sc">$</span>essgraph,<span class="st">"graphNEL"</span>),<span class="st">"Matrix"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as</span>(<span class="fu">as</span>(df_ges<span class="sc">$</span>essgraph,<span class="st">"graphNEL"</span>),<span class="st">"Matrix"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>4 x 4 sparse Matrix of class "ngCMatrix"
   a b c d
@@ -552,25 +599,55 @@ d . . . .</code></pre>
 </div>
 <p>And visualized:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df_ges<span class="sc">$</span>essgraph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df_ges<span class="sc">$</span>essgraph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 </div>
 <div id="tabset-7-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-2-tab">
+<p>In Python, we’ll use the same steps as before: import the algorithm, instantiate it and learn the graph:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>df.cov()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> castle.algorithms <span class="im">import</span> GES</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>ges <span class="op">=</span> GES()</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>ges.learn(df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The resulting object contains the ‘discovered’ adjacency matrix for comparison:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>ges.causal_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>          a         b         c         d
-a  0.997673  0.015685  0.302499  0.241931
-b  0.015685  1.002480  0.205238  0.164176
-c  0.302499  0.205238  0.131922  0.105515
-d  0.241931  0.164176  0.105515  0.084495</code></pre>
+<pre><code>Tensor([[0, 0, 1, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]])</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>GraphDAG(ges.causal_matrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;castle.common.plot_dag.GraphDAG object at 0x39c51d370&gt;</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="384"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>And visualized as a graph:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>show_graph_with_labels(ges.causal_matrix,  mylabels <span class="op">=</span> node_labels, mypos <span class="op">=</span> node_pos)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-30-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
 </div>
 </div>
 </div>
@@ -585,20 +662,39 @@ d  0.241931  0.164176  0.105515  0.084495</code></pre>
 <div class="tab-content" data-group="language">
 <div id="tabset-8-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-8-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>keeley <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"data/keeley.csv"</span>)</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>keeley <span class="ot">&lt;-</span> keeley <span class="sc">%&gt;%</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>elev)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>keeley <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"data/keeley.csv"</span>)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>keeley <span class="ot">&lt;-</span> keeley <span class="sc">%&gt;%</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>elev)</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(keeley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   90 obs. of  7 variables:
+ $ distance: num  53.4 37 53.7 53.7 52 ...
+ $ abiotic : num  60.7 40.9 51 61.2 46.7 ...
+ $ age     : int  40 25 15 15 23 24 35 14 45 35 ...
+ $ hetero  : num  0.757 0.491 0.844 0.691 0.546 ...
+ $ firesev : num  3.5 4.05 2.6 2.9 4.3 4 4.8 4.8 7.25 6.2 ...
+ $ cover   : num  1.039 0.478 0.949 1.195 1.298 ...
+ $ rich    : int  51 31 71 64 68 34 39 66 25 31 ...</code></pre>
+</div>
 </div>
 </div>
 <div id="tabset-8-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>df.cov()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>keeley <span class="op">=</span> pd.read_csv(<span class="st">"./data/keeley.csv"</span>)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>keeley.drop(<span class="st">'elev'</span>, axis<span class="op">=</span><span class="dv">1</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>keeley.describe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>          a         b         c         d
-a  0.997673  0.015685  0.302499  0.241931
-b  0.015685  1.002480  0.205238  0.164176
-c  0.302499  0.205238  0.131922  0.105515
-d  0.241931  0.164176  0.105515  0.084495</code></pre>
+<pre><code>        distance    abiotic        age  ...    firesev      cover       rich
+count  90.000000  90.000000  90.000000  ...  90.000000  90.000000  90.000000
+mean   49.234583  49.239025  25.566667  ...   4.565000   0.691232  49.233333
+std     8.829480   7.679109  12.566274  ...   1.652347   0.317235  15.105658
+min    37.037450  32.593865   3.000000  ...   1.200000   0.055577  15.000000
+25%    39.459800  43.812007  15.000000  ...   3.700000   0.487690  37.000000
+50%    51.770850  48.036046  25.000000  ...   4.300000   0.637118  50.000000
+75%    58.402237  54.898285  35.000000  ...   5.550000   0.914676  62.000000
+max    60.723000  70.456286  60.000000  ...   9.200000   1.535408  85.000000
+
+[8 rows x 7 columns]</code></pre>
 </div>
 </div>
 </div>
@@ -609,7 +705,7 @@ d  0.241931  0.164176  0.105515  0.084495</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -620,15 +716,15 @@ d  0.241931  0.164176  0.105515  0.084495</code></pre>
 <div class="tab-content" data-group="language">
 <div id="tabset-9-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-9-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>keeley_stats <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">C =</span> <span class="fu">cor</span>(keeley), </span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">n =</span> <span class="fu">nrow</span>(keeley))</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>keeley_pc <span class="ot">&lt;-</span> <span class="fu">pc</span>(keeley_stats, <span class="at">labels =</span> <span class="fu">names</span>(keeley),</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">indepTest =</span> gaussCItest, <span class="at">alpha =</span> <span class="fl">0.01</span>)</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(keeley_pc<span class="sc">@</span>graph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>keeley_stats <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">C =</span> <span class="fu">cor</span>(keeley), </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">n =</span> <span class="fu">nrow</span>(keeley))</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>keeley_pc <span class="ot">&lt;-</span> <span class="fu">pc</span>(keeley_stats, <span class="at">labels =</span> <span class="fu">names</span>(keeley),</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">indepTest =</span> gaussCItest, <span class="at">alpha =</span> <span class="fl">0.01</span>)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(keeley_pc<span class="sc">@</span>graph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -636,13 +732,21 @@ d  0.241931  0.164176  0.105515  0.084495</code></pre>
 </div>
 <div id="tabset-9-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>df.cov()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>          a         b         c         d
-a  0.997673  0.015685  0.302499  0.241931
-b  0.015685  1.002480  0.205238  0.164176
-c  0.302499  0.205238  0.131922  0.105515
-d  0.241931  0.164176  0.105515  0.084495</code></pre>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>keeley_pc <span class="op">=</span> PC(alpha<span class="op">=</span><span class="fl">0.005</span>)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>keeley_pc.learn(keeley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>node_labels <span class="op">=</span> {<span class="dv">0</span>: <span class="st">'distance'</span>, <span class="dv">1</span>: <span class="st">'abiotic'</span>, </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>               <span class="dv">2</span>: <span class="st">'age'</span>, <span class="dv">3</span>: <span class="st">'hetero'</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>               <span class="dv">4</span>: <span class="st">'firesev'</span>, <span class="dv">5</span>: <span class="st">'cover'</span>,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>               <span class="dv">6</span>: <span class="st">'rich'</span>}</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>show_graph_with_labels(keeley_pc.causal_matrix,  mylabels <span class="op">=</span> node_labels)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week8_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
 </div>
 </div>
 </div>
