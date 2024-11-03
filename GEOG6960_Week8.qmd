@@ -32,7 +32,7 @@ In this lab, we're going to test methods for causal discovery. We'll use a synth
 There are a range of packages with algorithms for causal discovery in both R and Python. Here, we'll use:
 
 - R: **causalDisco** - this packages builds on and integrates functions from a set of other packages, mainly from the Bioconductor repository. Installation instructions are given below. 
-- Python: **causal-learn** - we'll this as it is part of a larger Python ecosystem for causal analysis. Other packages include **gcastle** and **cdt**, the Causal Discovery Toolbox 
+- Python: **gcastle**. Other packages include **causal-learn** and **cdt**, the Causal Discovery Toolbox 
 
 First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
 
@@ -64,10 +64,14 @@ library(pcalg)
 
 # Python
 
+Install **gcastle** (`pip install gcastle`) before going further. You'll also need the **networkx** package to visualize the results.
+
 ```{python}
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns
+import networkx as nx
 ```
 :::
 
@@ -136,6 +140,7 @@ a = np.random.normal(0, 1, n)
 b = np.random.normal(0, 1, n)
 c = 0.3*a + 0.2*b + np.random.normal(0, 0.01, n)
 d = 0.8*c + np.random.normal(0, 0.01, n)
+# e = -0.4*a + -0.4*d + np.random.normal(0, 0.01, n)
 
 df = pd.DataFrame({'a': a,
                    'b': b,
@@ -217,8 +222,17 @@ df_pc <- pc(df_stats, labels = names(df),
 
 # Python
 
+The **gcastle** package has a module `algorithms` that holds the various search function. We'll import `PC()` from this for the Peters-Clark algorithm, and instantiate it. Note that there are several options that can be set at this point, including the threshold for inclusion of edges (`alpha`) and the test used (`ci_test`)
+
 ```{python}
-df.cov()
+from castle.algorithms import PC
+pc = PC(alpha=0.05)
+```
+
+Now we can use the `learn()` function from this object with the data we made earlier. This needs as input the data corresponding to each node, either as a Pandas dataframe or a numpy array.
+
+```{python}
+pc.learn(df)
 ```
 
 :::
@@ -242,12 +256,41 @@ plot(df_pc@graph)
 
 # Python
 
+The 'discovered' adjacency matrix is shown in the `summary()` output. Compare this to the known matrix above.
+
 ```{python}
-df.cov()
+pc.causal_matrix
+```
+
+```{python}
+from castle.common import GraphDAG
+GraphDAG(pc.causal_matrix)
+```
+
+You can also visualize the resulting graph with the **networkx** package. We'll create a function here to do this for the next example as well:
+
+```{python}
+def show_graph_with_labels(adjacency_matrix, mylabels, mypos=None):
+    rows, cols = np.where(adjacency_matrix == 1)
+    edges = zip(rows.tolist(), cols.tolist())
+    gr = nx.DiGraph()
+    gr.add_edges_from(edges)
+    if mypos is not None:
+        nx.draw(gr, node_size=500, labels=mylabels, pos=mypos, with_labels=True)
+    else:
+        nx.draw(gr, node_size=500, labels=mylabels, with_labels=True)
+    plt.show()
+```
+
+```{python}
+node_labels = {0: 'a', 1: 'b', 2: 'c', 3: 'd'}
+node_pos = {0: (0, 0), 1: (0, 2), 2: (1, 1), 3: (2, 1)}
+show_graph_with_labels(pc.causal_matrix,  mylabels = node_labels, mypos = node_pos)
 ```
 
 :::
 
+Looks pretty good right? Try re-running this changing some of the algorithm options (particularly `alpha`, the threshold for rejecting edges).
 
 ## Greedy Equivalence Search algorithm
 
@@ -290,8 +333,28 @@ plot(df_ges$essgraph)
 
 # Python
 
+In Python, we'll use the same steps as before: import the algorithm, instantiate it and learn the graph:
+
 ```{python}
-df.cov()
+from castle.algorithms import GES
+ges = GES()
+ges.learn(df)
+```
+
+The resulting object contains the 'discovered' adjacency matrix for comparison:
+
+```{python}
+ges.causal_matrix
+```
+
+```{python}
+GraphDAG(ges.causal_matrix)
+```
+
+And visualized as a graph:
+
+```{python}
+show_graph_with_labels(ges.causal_matrix,  mylabels = node_labels, mypos = node_pos)
 ```
 
 :::
@@ -308,12 +371,15 @@ Let's finish by running one of these algorithms with a real dataset. We'll use t
 keeley <- read.csv("data/keeley.csv")
 keeley <- keeley %>%
     select(-elev)
+str(keeley)
 ```
 
 # Python
 
 ```{python}
-df.cov()
+keeley = pd.read_csv("./data/keeley.csv")
+keeley.drop('elev', axis=1, inplace=True)
+keeley.describe()
 ```
 
 :::
@@ -367,7 +433,16 @@ plot(keeley_pc@graph)
 # Python
 
 ```{python}
-df.cov()
+keeley_pc = PC(alpha=0.005)
+keeley_pc.learn(keeley)
+```
+
+```{python}
+node_labels = {0: 'distance', 1: 'abiotic', 
+               2: 'age', 3: 'hetero',
+               4: 'firesev', 5: 'cover',
+               6: 'rich'}
+show_graph_with_labels(keeley_pc.causal_matrix,  mylabels = node_labels)
 ```
 
 :::
