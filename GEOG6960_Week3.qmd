@@ -80,7 +80,7 @@ Where:
 
 First, we're going to create a synthetic dataset, which will include the impact of a treatment. The time series will include a base trend, which will then be modified after the start of the intervention.
 
-First, we'll set a random seed to make the results repeatable. As before, try changing this to see how the noise we will add changes the reuslts.
+First, we'll set a random seed to make the results repeatable. As before, try changing this to see how the noise we will add changes the results.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -174,7 +174,6 @@ sns.scatterplot(well_df,
                 y = "Y", 
                 alpha = 0.75)
 ```
-
 :::
 
 ### A simple model
@@ -272,7 +271,6 @@ plt.axvline(x=200)
 sns.lineplot(well_df, x = "T", y = "yhat",ax=ax,
             color="darkorange", linewidth=5)
 ```
-
 :::
 
 ### Counterfactual
@@ -323,10 +321,9 @@ Counterfactual:
 ```{python}
 b0 + b1 * (200 + post_time)
 ```
-
 :::
 
-Which should give you a difference of around +40 from the counterfactual. We can also predict these across a range of values, and compare with the factual values to show the effect over time. To do this we need to make a data frame that contains the values of the model variables (`T`, `D`, `P`) for both conditions. For the factual, we just use the values we created earlier. For the counterfactual, we repeat the time variable (`T`), but set both `D` and `P` to zero. 
+Which should give you a difference of around +40 from the counterfactual. We can also predict these across a range of values, and compare with the factual values to show the effect over time. To do this we need to make a data frame that contains the values of the model variables (`T`, `D`, `P`) for both conditions. For the factual, we just use the values we created earlier. For the counterfactual, we repeat the time variable (`T`), but set both `D` and `P` to zero.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -370,7 +367,6 @@ plt.axvline(x=200)
 sns.lineplot(pred_df, x = "T", y = "yhat", ax=ax, hue = "D",
             linewidth=5)
 ```
-
 :::
 
 ## Difference-in-differences
@@ -466,7 +462,6 @@ sns.pointplot(house_df, x = 'Time', y = 'Price', hue = 'Treat')
 ```
 :::
 
-
 ### A simple model
 
 As before, we'll start with simple OLS model, with the prices as a function of treatment and time. We'll exclude the DID effect here, which makes the model:
@@ -474,7 +469,6 @@ As before, we'll start with simple OLS model, with the prices as a function of t
 $$
 Y = \beta_0 + \beta_1 T + \beta_2 D
 $$
-
 
 ::: {.panel-tabset group="language"}
 # R
@@ -493,7 +487,7 @@ print(fit0.summary())
 ```
 :::
 
-We get a pretty good model, but note that neither of the coefficients match the expected values from our simulated data (e.g. the effect of time is much larger than the base effect). Again (and I'm sure you've already understood this), this is because the model is merging the effects of time for the two groups together. 
+We get a pretty good model, but note that neither of the coefficients match the expected values from our simulated data (e.g. the effect of time is much larger than the base effect). Again (and I'm sure you've already understood this), this is because the model is merging the effects of time for the two groups together.
 
 ### DID model
 
@@ -516,7 +510,7 @@ print(fit1.summary())
 ```
 :::
 
-And the results should be a much better match, with the model coefficients comparable to the values with used in creating the data. **NB:** of all the results here, the most important is the coefficient on the `Time:Treat` interaction. This is the *casual* effect in this model: the impact on house prices due to the addition of subsidized housing. 
+And the results should be a much better match, with the model coefficients comparable to the values with used in creating the data. **NB:** of all the results here, the most important is the coefficient on the `Time:Treat` interaction. This is the *casual* effect in this model: the impact on house prices due to the addition of subsidized housing.
 
 As in the previous section, we can also compare the two models with ANOVA, to see if including the DID term is helpful
 
@@ -546,22 +540,23 @@ $$
 Y = \beta_0 + \beta_1 T + \beta_2 D + \beta_3 D\times T
 $$
 
-- Control at time 0: $\beta_0$
-- Control at time 1: $\beta_0 + \beta_1$
-- Treatment at time 0: $\beta_0 + \beta_2$
-- Treatment at time 1 (factual): $\beta_0 + \beta_2 + \beta_1 + \beta_3$
-- Treatment at time 1 (counterfactual): $\beta_0 + \beta_2 + \beta_1$
+-   Control at time 0: $\beta_0$
+-   Control at time 1: $\beta_0 + \beta_1$
+-   Treatment at time 0: $\beta_0 + \beta_2$
+-   Treatment at time 1 (factual): $\beta_0 + \beta_2 + \beta_1 + \beta_3$
+-   Treatment at time 1 (counterfactual): $\beta_0 + \beta_2 + \beta_1$
 
 ::: {.panel-tabset group="language"}
 # R
 
 First extract the model coefficients:
+
 ```{r}
 did_coefs = coef(fit1)
 did_coefs
 ```
 
-Now, we'll make up vectors of estimates for the control, treatment, and the treatment with the counterfactual estimate at time = 1: 
+Now, we'll make up vectors of estimates for the control, treatment, and the treatment with the counterfactual estimate at time = 1:
 
 ```{r}
 yhat_control = c(did_coefs[1], did_coefs[1] + did_coefs[2])
@@ -615,7 +610,6 @@ pred_df = pd.DataFrame({'Label': np.repeat(["Control", "Treat", "CF"], 2),
 ```{python}
 sns.lineplot(pred_df, x = "Time", y = "yhat", hue = "Label")
 ```
-
 :::
 
-The DID effect can be seen here clearly as the difference in the treatment and CF estimates at time = 1. 
+The DID effect can be seen here clearly as the difference in the treatment and CF estimates at time = 1.

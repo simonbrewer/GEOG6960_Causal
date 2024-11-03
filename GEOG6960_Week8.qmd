@@ -39,7 +39,7 @@ First load (or install and load) the relevant packages. We'll need some addition
 ::: {.panel-tabset group="language"}
 # R
 
-The **pcalg** library has a fairly large number of dependencies, including packages that are not part of the standard CRAN system. You'll need to run (at least) the following commands *after* installing **pcalg** to get all the appropriate functions. These are all part of the Bioconductor repository to be installed first from here:
+The **causalDisco** library has a fairly large number of dependencies, including packages that are not part of the standard CRAN system. You'll need to run (at least) the following commands *after* installing **causalDisco** to get all the appropriate functions. These are all part of the Bioconductor repository to be installed first from here:
 
 https://www.bioconductor.org/
 
@@ -58,6 +58,7 @@ library(ggpubr)
 library(dagitty)
 library(ggdag)
 library(GGally)
+library(causalDisco)
 library(pcalg)
 ```
 
@@ -70,9 +71,7 @@ import seaborn as sns
 ```
 :::
 
-## Example 1
-
-### Data
+## Example data
 
 First, we're going to create a synthetic dataset, based on the following 'true' DAG. This is the structure that we will try to discover later on:
 
@@ -208,7 +207,7 @@ df_stats <- list(C = cor(df), n = nrow(df))
 With this, we can then run the PC algorithm. This takes as arguments:
 
 - The list of summary statistics
-- A predefined function to test for independence (`gaussCItest` for normally distributed variables)
+- A predefined function to test for independence (`gaussCItest` for normally distributed variables, other functions exist for discrete or binary data)
 - The threshold for inclusion (correlations below this threshold will be excluded)
 
 ```{r}
@@ -252,10 +251,131 @@ df.cov()
 
 ## Greedy Equivalence Search algorithm
 
-We'll first estimate the causal graph using the Peters-Clark (PC) algorithm. Starting from a graph with all the nodes but no edges, this will iterate through three stages:
+Next we'll use a greedy search method to find the structure, the Greedy Equivalence Search (GES) algorithm. WStarting from a graph with all the nodes but no edges, this will iterate through three stages:
 
 - Forwards: edges are added until no further improvement is obtained
 - Backwards: edges are removed until no further improvement is obtained
 - Turning: edges are reversed until no further improvement is obtained
 
 The *improvement* is measured by a score, in this case the Bayesian Information Criterion (BIC). 
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, this requires first setting up the score function. `GaussL0penObsScore` is a general function for this, which by default will estimate the Bayesian Information Criterion. This also takes an argument (`lambda`) to change the weighting (default is $log(n)/2$). Setting this to higher values will penalize against more complex graphs. 
+
+```{r}
+score <- new("GaussL0penObsScore", df)
+```
+
+Now we can estimate the causal structure using the `ges()` function (setting `verbose=TRUE` displays the progress through the different steps described above):
+
+```{r}
+df_ges <- ges(score, verbose = TRUE)
+```
+
+The resulting object contains the 'discovered' graph:
+
+Which can be convert to an adjacency matrix for comparison:
+
+```{r}
+as(as(df_ges$essgraph,"graphNEL"),"Matrix")
+```
+
+And visualized:
+
+```{r}
+plot(df_ges$essgraph)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+:::
+
+## Causal discovery of Keeley and Grace
+
+Let's finish by running one of these algorithms with a real dataset. We'll use the Grace and Keeley data set again here. First load it (and remove the elevation column):
+
+::: {.panel-tabset group="language"}
+
+# R
+
+```{r}
+keeley <- read.csv("data/keeley.csv")
+keeley <- keeley %>%
+    select(-elev)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+:::
+
+As a reminder, the DAG published in the 2009 paper looks like this:
+
+```{r echo=FALSE}
+grace_dag <- dagify(age ~ distance,
+                    hetero ~ distance,
+                    abiotic ~ distance,
+                    firesev ~ age,
+                    cover ~ firesev,
+                    rich ~ cover + hetero + abiotic + distance,
+                    coords = list(x = c(distance = 1,
+                                        age = 2,
+                                        firesev = 3,
+                                        hetero = 3,
+                                        abiotic = 3,
+                                        cover = 4,
+                                        rich = 5), 
+                                  y = c(distance = 2,
+                                        age = 1,
+                                        firesev = 1,
+                                        hetero = 3,
+                                        abiotic = 4,
+                                        cover = 1,
+                                        rich = 2)
+                    ),
+                    exposure = "firesev",
+                    outcome = "rich"
+)
+
+ggdag(grace_dag) +
+  theme_dag()
+```
+
+So, let's see how close the PC algorithm comes to this:
+
+::: {.panel-tabset group="language"}
+
+# R
+
+```{r}
+keeley_stats <- list(C = cor(keeley), 
+                     n = nrow(keeley))
+keeley_pc <- pc(keeley_stats, labels = names(keeley),
+                indepTest = gaussCItest, alpha = 0.01)
+plot(keeley_pc@graph)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+:::
+
+The results are a bit of a mixed bag. The returned graph is split into two. In one, the richness is correctly identified as being caused by three of the variables. However, the chain linking age to fire severity and richness, while identified, is not linked. 
+
+## Summary
+
+The final results show that caution is required when applying these methods. These cannot incorporate domain knowledge and so can only find the optimal structure *according to the rules of the algorithm*. With that in mind, these can provide a useful first pass through the data that can then be modified using theory and domain expertise. 
+
+
