@@ -1,0 +1,152 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 8"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 260 Central Campus Drive
+        city: Salt Lake City
+        state: UT
+        postal-code: 84112
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to test methods for causal discovery. We'll use a synthetic example, and a quick test with the Grace and Keeley fire/plant abundance dataset (*keeley.csv*).
+
+## Coding SEMs
+
+Both R and Python have packages that allow you to create SEMs and estimate coefficients based on a dataset.
+
+-   R: **lavaan** and **sem**
+-   Python: **semopy** (`pip install semopy`)
+
+First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+#| output: false
+library(tidyverse)
+library(GGally)
+library(lavaan)
+library(lavaanPlot)
+```
+
+# Python
+
+```{python}
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import semopy
+```
+:::
+
+
+## Moderation
+
+TBD
+
+### Example data
+
+First, we're going to create a synthetic dataset, that include a moderation effect. This will have 4 variables, which we will create as follows:
+
+-   `s` a randomly distributed exogenous variable representing sleep: $a ~ N(0, 1)$
+-   `b` a randomly distributed exogenous variable: $a ~ N(0, 1)$
+-   `c` an endogenous variable 'caused' by `a` and `b`: $c = 0.3\times a + 0.2 \times b + N(0, 0.01)$
+-   `d` the outcome variable 'caused' by `c`: $d = 0.8 \times c + N(0, 0.01)$
+
+If you want to make this more complex, uncomment the line that creates the variable `e`. This will add an additional collider to the DAG.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+set.seed(1)
+n <- 10000
+a <- rnorm(n) 
+b <- rnorm(n) 
+c <- 0.3*a + 0.2*b + rnorm(n, 0, 0.01)
+d <- 0.8*c + rnorm(n, 0, 0.01)
+# e <- -0.4*a + -0.4*d + rnorm(n, 0, 0.01)
+df <- data.frame(a,b,c,d)
+```
+
+# Python
+
+```{python}
+np.random.seed(1)
+n = 10000
+a = np.random.normal(0, 1, n)
+b = np.random.normal(0, 1, n)
+c = 0.3*a + 0.2*b + np.random.normal(0, 0.01, n)
+d = 0.8*c + np.random.normal(0, 0.01, n)
+# e = -0.4*a + -0.4*d + np.random.normal(0, 0.01, n)
+
+df = pd.DataFrame({'a': a,
+                   'b': b,
+                   'c': c,
+                   'd': d})
+```
+:::
+
+As usual, we'll do a little exploration of the data before moving on.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggpairs(df)
+```
+
+# Python
+
+```{python}
+sns.pairplot(df)
+```
+:::
+
+And here's the covariance and correlation matrices:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+# Covariance
+cov(df)
+```
+
+```{r}
+# Correlation
+cor(df)
+```
+
+# Python
+
+```{python}
+df.cov()
+```
+
+```{python}
+df.corr()
+```
+:::
+
+## Summary
+
+TBD
