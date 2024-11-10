@@ -291,6 +291,229 @@ Note that semopy does not allow for the estimation of the additional values, but
 
 ## Latent variable models
 
+We'll now take a look at the use of latent variables (LVs) in these models. LVs represent unobserved variables, generally something that was not or cannot be measured. As these are unobserved, we use *indicator* variables to work with them. These (indicators) are variables in the system that are assumed to be expressions of latent variable, but that are measurable. 
+
+LVs are generally used represent larger, theoretical variables (especially in behavioral sciences), and have a role in explaining why the exogenous variables may be correlated (as they are driven by the LV). 
+
+### Data
+
+Let's start by loading some data. These are observations from a paper by Travis and Grace (2010) on the growth of transplanted individuals of a plant species. The goal of the study is to understand if the degree of locality, represented by genetic distance from local populations, is related to a conceptual varaible describing plant *performance*. As this cannot be directly measured, the data instead contain a series of physical variables (e.g. diameter or number of stems) that can be measured. Let's load the data and take a quick look.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis <- read.csv("./data/travis.csv")
+head(travis)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggpairs(travis)
+```
+
+# Python
+
+```{python}
+sns.pairplot(travis)
+```
+:::
+
+Here's the correlation matrix for the measured physical variables. Note that these are generally highly correlated, which suggests that there is a common cause: 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+cor(travis[, 4:8])
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+### Measurement model
+
+Based on this we can describe a *measurement* model, that relates the LV (`performance`) to the observed measurements. Latent variables are described with `~=` syntax, with the LV on the left hand side and the measured, indicators on the right.
+
+![Latent variable model for Travis and Grace dataset](images/week9_1.png)
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_latent_formula1 <- '
+performance =~ stems + infls + clonediam + leafht + leafwdth
+'
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+We can now estimate the model:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_latent_model1 <- sem(travis_latent_formula1, travis)
+summary(travis_latent_model1)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r eval=FALSE}
+lavaanPlot(travis_latent_model1, coefs = TRUE, covs = TRUE)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+modindices(travis_latent_model1)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_latent_formula2 <- '
+performance =~ stems + infls + clonediam + leafht + leafwdth
+leafht ~~ leafwdth
+'
+
+travis_latent_model2 <- sem(travis_latent_formula2, travis)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+summary(travis_latent_model2)
+```
+
+```{r eval=FALSE}
+lavaanPlot(travis_latent_model2, coefs = TRUE, covs = TRUE)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+### Structural model
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_path_formula1 <- '
+# latent
+performance =~ stems + infls + clonediam + leafht + leafwdth
+
+# structural paths
+performance ~ geneticdist
+
+# correlated errors
+leafht ~~ leafwdth
+'
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_path_model1 <- sem(travis_path_formula1, travis)
+summary(travis_path_model1)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r eval=FALSE}
+lavaanPlot(travis_path_model1, coefs = TRUE, covs = TRUE)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
 
 ## Summary
 
