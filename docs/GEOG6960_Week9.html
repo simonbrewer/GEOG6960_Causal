@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Simon Brewer">
-<meta name="dcterms.date" content="2024-11-09">
+<meta name="dcterms.date" content="2024-11-10">
 
-<title>GEOG 6960 Causality in Geog. Studies 8</title>
+<title>GEOG 6960 Causality in Geog. Studies 9</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -154,8 +154,17 @@ window.Quarto = {
   <li><a href="#path-analysis" id="toc-path-analysis" class="nav-link" data-scroll-target="#path-analysis">Path analysis</a></li>
   <li><a href="#sem" id="toc-sem" class="nav-link" data-scroll-target="#sem">SEM</a></li>
   </ul></li>
-  <li><a href="#latent-variable-models" id="toc-latent-variable-models" class="nav-link" data-scroll-target="#latent-variable-models">Latent variable models</a></li>
+  <li><a href="#latent-variable-models" id="toc-latent-variable-models" class="nav-link" data-scroll-target="#latent-variable-models">Latent variable models</a>
+  <ul class="collapse">
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#measurement-model" id="toc-measurement-model" class="nav-link" data-scroll-target="#measurement-model">Measurement model</a></li>
+  <li><a href="#structural-model" id="toc-structural-model" class="nav-link" data-scroll-target="#structural-model">Structural model</a></li>
+  </ul></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#appendix-data-files" id="toc-appendix-data-files" class="nav-link" data-scroll-target="#appendix-data-files">Appendix: Data files</a>
+  <ul class="collapse">
+  <li><a href="#tavis-and-grace-dataset-travis.csv" id="toc-tavis-and-grace-dataset-travis.csv" class="nav-link" data-scroll-target="#tavis-and-grace-dataset-travis.csv">Tavis and Grace dataset <em>travis.csv</em></a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -164,7 +173,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">GEOG 6960 Causality in Geog. Studies 8</h1>
+<h1 class="title">GEOG 6960 Causality in Geog. Studies 9</h1>
 </div>
 
 
@@ -188,7 +197,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 9, 2024</p>
+      <p class="date">November 10, 2024</p>
     </div>
   </div>
   
@@ -207,7 +216,7 @@ window.Quarto = {
 </div>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>In this lab, we’re going to test methods for causal discovery. We’ll use a synthetic example, and a quick test with the Grace and Keeley fire/plant abundance dataset (<em>keeley.csv</em>).</p>
+<p>In this lab, we’re going to look at how to estimate moderation in causal models, and introduce working with latent variables. We’ll use a synthetic example, and a(nother) ecological dataset on plant adaptation from Travis and Grace (2010) (<em>travis.csv</em>).</p>
 </section>
 <section id="coding-sems" class="level2">
 <h2 class="anchored" data-anchor-id="coding-sems">Coding SEMs</h2>
@@ -376,8 +385,8 @@ F-statistic: 686.5 on 2 and 97 DF,  p-value: &lt; 2.2e-16</code></pre>
 Dep. Variable:                      W   R-squared:                       0.934
 Model:                            OLS   Adj. R-squared:                  0.933
 Method:                 Least Squares   F-statistic:                     686.5
-Date:                Sat, 09 Nov 2024   Prob (F-statistic):           5.53e-58
-Time:                        17:12:48   Log-Likelihood:                -299.39
+Date:                Sun, 10 Nov 2024   Prob (F-statistic):           5.53e-58
+Time:                        12:59:11   Log-Likelihood:                -299.39
 No. Observations:                 100   AIC:                             604.8
 Df Residuals:                      97   BIC:                             612.6
 Df Model:                           2                                         
@@ -445,8 +454,8 @@ F-statistic:  1512 on 1 and 98 DF,  p-value: &lt; 2.2e-16</code></pre>
 Dep. Variable:                      T   R-squared:                       0.945
 Model:                            OLS   Adj. R-squared:                  0.944
 Method:                 Least Squares   F-statistic:                     1680.
-Date:                Sat, 09 Nov 2024   Prob (F-statistic):           1.75e-63
-Time:                        17:12:48   Log-Likelihood:                -596.75
+Date:                Sun, 10 Nov 2024   Prob (F-statistic):           1.75e-63
+Time:                        12:59:11   Log-Likelihood:                -596.75
 No. Observations:                 100   AIC:                             1197.
 Df Residuals:                      98   BIC:                             1203.
 Df Model:                           1                                         
@@ -653,12 +662,627 @@ Value  135.147698           0.0</code></pre>
 </section>
 <section id="latent-variable-models" class="level2">
 <h2 class="anchored" data-anchor-id="latent-variable-models">Latent variable models</h2>
+<p>We’ll now take a look at the use of latent variables (LVs) in these models. LVs represent unobserved variables, generally something that was not or cannot be measured. As these are unobserved, we use <em>indicator</em> variables to work with them. These (indicators) are variables in the system that are assumed to be expressions of latent variable, but that are measurable.</p>
+<p>LVs are generally used represent larger, theoretical variables (especially in behavioral sciences), and have a role in explaining why the exogenous variables may be correlated (as they are driven by the LV).</p>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>Let’s start by loading some data. These are observations from a paper by Travis and Grace (2010) on the growth of transplanted individuals of a plant species. The goal of the study is to understand if the degree of locality, represented by genetic distance from local populations, is related to a conceptual varaible describing plant <em>performance</em>. As this cannot be directly measured, the data instead contain a series of physical variables (e.g.&nbsp;diameter or number of stems) that can be measured. Let’s load the data and take a quick look.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-9-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-1" role="tab" aria-controls="tabset-9-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-9-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-2" role="tab" aria-controls="tabset-9-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-9-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-9-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>travis <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(travis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  siteno latitude geneticdist  stems infls clonediam   leafht leafwdth
+1      1    37.54     0.47263 15.375  1.00  12.49625 11.83012 1.214805
+2      2    29.34     0.00554 34.875  1.75  46.65625 35.50104 4.328820
+3      3    28.15     0.18589 45.250  4.50  53.25000 48.74358 6.269271
+4      4    29.53     0.25973 16.125  1.75  21.37500 42.90950 4.575165
+5      5    30.23     0.13122 24.250  1.75  22.51750 45.86902 6.231427
+6      6    42.30     0.55000  3.750  0.00   2.90000 14.14740 1.333766</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-9-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-10-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-1" role="tab" aria-controls="tabset-10-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-2" role="tab" aria-controls="tabset-10-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-10-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-10-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(travis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week9_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>sns.pairplot(travis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week9_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="987"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week9_files/figure-html/unnamed-chunk-28-2.png" class="img-fluid figure-img" width="1920"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Here’s the correlation matrix for the measured physical variables. Note that these are generally highly correlated, which suggests that there is a common cause:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-11-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-11-1" role="tab" aria-controls="tabset-11-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-11-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-11-2" role="tab" aria-controls="tabset-11-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-11-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-11-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor</span>(travis[, <span class="dv">4</span><span class="sc">:</span><span class="dv">8</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              stems     infls clonediam    leafht  leafwdth
+stems     1.0000000 0.8339227 0.9333150 0.7275625 0.6457378
+infls     0.8339227 1.0000000 0.8126388 0.6925888 0.6026302
+clonediam 0.9333150 0.8126388 1.0000000 0.7729843 0.7296621
+leafht    0.7275625 0.6925888 0.7729843 1.0000000 0.9687725
+leafwdth  0.6457378 0.6026302 0.7296621 0.9687725 1.0000000</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-11-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-11-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="measurement-model" class="level3">
+<h3 class="anchored" data-anchor-id="measurement-model">Measurement model</h3>
+<p>Based on this we can describe a <em>measurement</em> model, that relates the LV (<code>performance</code>) to the observed measurements. Latent variables are described with <code>~=</code> syntax, with the LV on the left hand side and the measured, indicators on the right.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/week9_1.png" class="img-fluid figure-img"></p>
+<figcaption>Latent variable model for Travis and Grace dataset</figcaption>
+</figure>
+</div>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-12-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-12-1" role="tab" aria-controls="tabset-12-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-12-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-12-2" role="tab" aria-controls="tabset-12-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-12-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-12-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>travis_latent_formula1 <span class="ot">&lt;-</span> <span class="st">'</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="st">performance =~ stems + infls + clonediam + leafht + leafwdth</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-12-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-12-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>We can now estimate the model:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-13-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-13-1" role="tab" aria-controls="tabset-13-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-13-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-13-2" role="tab" aria-controls="tabset-13-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-13-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-13-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>travis_latent_model1 <span class="ot">&lt;-</span> <span class="fu">sem</span>(travis_latent_formula1, travis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: lavaan-&gt;lav_object_post_check():  
+   some estimated ov variances are negative</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(travis_latent_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6-19 ended normally after 82 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        10
+
+  Number of observations                            23
+
+Model Test User Model:
+                                                      
+  Test statistic                                51.106
+  Degrees of freedom                                 5
+  P-value (Chi-square)                           0.000
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  performance =~                                      
+    stems             1.000                           
+    infls             0.126    0.037    3.377    0.001
+    clonediam         1.160    0.309    3.751    0.000
+    leafht            1.215    0.244    4.971    0.000
+    leafwdth          0.151    0.031    4.822    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .stems           125.886   37.014    3.401    0.001
+   .infls             2.405    0.707    3.403    0.001
+   .clonediam       132.478   39.038    3.394    0.001
+   .leafht           -1.847    5.336   -0.346    0.729
+   .leafwdth          0.223    0.105    2.131    0.033
+    performance     135.763   67.580    2.009    0.045</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-13-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-13-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>The output has changed a little, now we have information on the factor loadings under the heading <code>Latent Variables:</code>. The estimates here represent the loadings obtained from a factor analysis of the observed variables. These are standardized to the first variable (this will always be 1). Higher values indicate that a variable is a good representative of the LV, and lower values indicate that the variable is influenced by other factors in addition to the LV.</p>
+<p>Two of the variables have fairly low values, but these are sensitive to the scale of the variables. Let’s re-run this now with scaled variables:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-14-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-14-1" role="tab" aria-controls="tabset-14-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-14-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-14-2" role="tab" aria-controls="tabset-14-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-14-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-14-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>travis <span class="ot">&lt;-</span> travis <span class="sc">%&gt;%</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">stems =</span> (stems <span class="sc">-</span> <span class="fu">mean</span>(stems)) <span class="sc">/</span> <span class="fu">sd</span>(stems),</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">infls =</span> (infls <span class="sc">-</span> <span class="fu">mean</span>(infls)) <span class="sc">/</span> <span class="fu">sd</span>(infls),</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">clonediam =</span> (clonediam <span class="sc">-</span> <span class="fu">mean</span>(clonediam)) <span class="sc">/</span> <span class="fu">sd</span>(clonediam),</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">leafht =</span> (leafht <span class="sc">-</span> <span class="fu">mean</span>(leafht)) <span class="sc">/</span> <span class="fu">sd</span>(leafht),</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">leafwdth =</span> (leafwdth <span class="sc">-</span> <span class="fu">mean</span>(leafwdth)) <span class="sc">/</span> <span class="fu">sd</span>(leafwdth))</span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>travis_latent_model1 <span class="ot">&lt;-</span> <span class="fu">sem</span>(travis_latent_formula1, travis)</span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(travis_latent_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6-19 ended normally after 25 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        10
+
+  Number of observations                            23
+
+Model Test User Model:
+                                                      
+  Test statistic                                55.494
+  Degrees of freedom                                 5
+  P-value (Chi-square)                           0.000
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  performance =~                                      
+    stems             1.000                           
+    infls             0.891    0.134    6.667    0.000
+    clonediam         1.023    0.092   11.082    0.000
+    leafht            0.849    0.144    5.885    0.000
+    leafwdth          0.790    0.157    5.035    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .stems             0.091    0.043    2.128    0.033
+   .infls             0.269    0.086    3.116    0.002
+   .clonediam         0.050    0.037    1.357    0.175
+   .leafht            0.333    0.104    3.193    0.001
+   .leafwdth          0.416    0.128    3.255    0.001
+    performance       0.866    0.283    3.063    0.002</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-14-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-14-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>And plot the resulting model.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-15-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-15-1" role="tab" aria-controls="tabset-15-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-15-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-15-2" role="tab" aria-controls="tabset-15-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-15-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-15-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lavaanPlot</span>(travis_latent_model1, <span class="at">coefs =</span> <span class="cn">TRUE</span>, <span class="at">covs =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-15-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-15-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>In the results, we got a significant Chi-squared test. This suggests that some information is lacking in the model. We can use the modification indices to try and work out what might be missing. As a reminder, these show how much the model would improve if a given path is included in the model (look for high values in the <code>mi</code> column):</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-16-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-16-1" role="tab" aria-controls="tabset-16-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-16-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-16-2" role="tab" aria-controls="tabset-16-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-16-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-16-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">modindices</span>(travis_latent_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         lhs op       rhs     mi    epc sepc.lv sepc.all sepc.nox
+12     stems ~~     infls  1.522  0.062   0.062    0.395    0.395
+13     stems ~~ clonediam  5.229  0.152   0.152    2.252    2.252
+14     stems ~~    leafht  2.293 -0.077  -0.077   -0.445   -0.445
+15     stems ~~  leafwdth  4.728 -0.117  -0.117   -0.601   -0.601
+16     infls ~~ clonediam  1.068 -0.052  -0.052   -0.448   -0.448
+17     infls ~~    leafht  0.018  0.009   0.009    0.031    0.031
+18     infls ~~  leafwdth  0.259 -0.038  -0.038   -0.114   -0.114
+19 clonediam ~~    leafht  0.739 -0.043  -0.043   -0.334   -0.334
+20 clonediam ~~  leafwdth  0.012 -0.006  -0.006   -0.040   -0.040
+21    leafht ~~  leafwdth 22.276  0.388   0.388    1.041    1.041</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-16-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-16-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>The largest value is for the path <code>leafht ~~  leafwdth</code>. The double <code>~~</code> represents a missing covariance or correlation between variables (here between the width and length of a leaf). We’ll include this now and re-run the model. (Note that you could argue for a latent variable representing <code>leaf size</code> that links to both of these.)</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-17-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-17-1" role="tab" aria-controls="tabset-17-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-17-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-17-2" role="tab" aria-controls="tabset-17-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-17-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-17-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>travis_latent_formula2 <span class="ot">&lt;-</span> <span class="st">'</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="st">performance =~ stems + infls + clonediam + leafht + leafwdth</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a><span class="st">leafht ~~ leafwdth</span></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>travis_latent_model2 <span class="ot">&lt;-</span> <span class="fu">sem</span>(travis_latent_formula2, travis)</span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(travis_latent_model2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6-19 ended normally after 41 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        11
+
+  Number of observations                            23
+
+Model Test User Model:
+                                                      
+  Test statistic                                 7.410
+  Degrees of freedom                                 4
+  P-value (Chi-square)                           0.116
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  performance =~                                      
+    stems             1.000                           
+    infls             0.884    0.123    7.173    0.000
+    clonediam         0.989    0.087   11.319    0.000
+    leafht            0.800    0.145    5.509    0.000
+    leafwdth          0.727    0.160    4.529    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+ .leafht ~~                                           
+   .leafwdth          0.403    0.128    3.156    0.002
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .stems             0.056    0.040    1.404    0.160
+   .infls             0.252    0.082    3.085    0.002
+   .clonediam         0.075    0.042    1.792    0.073
+   .leafht            0.380    0.118    3.227    0.001
+   .leafwdth          0.481    0.147    3.283    0.001
+    performance       0.901    0.284    3.173    0.002</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lavaanPlot</span>(travis_latent_model2, <span class="at">coefs =</span> <span class="cn">TRUE</span>, <span class="at">covs =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-17-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-17-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>This has fixed the problem and we now have a non-significant Chi-squared test.</p>
+</section>
+<section id="structural-model" class="level3">
+<h3 class="anchored" data-anchor-id="structural-model">Structural model</h3>
+<p>The measurement model (above) is used to describe the relationship between an LV and the observed variables that represent it. We can go further by linking this to an observed outcome in a structural model. (Note that you can also use LVs with the outcome, but we won’t cover that here.)</p>
+<p>To do this, we need to expand the model formula to include both the measurement and strucutral model. We’ll also keep the covariance between the two leaf variables.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-18-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-18-1" role="tab" aria-controls="tabset-18-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-18-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-18-2" role="tab" aria-controls="tabset-18-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-18-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-18-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>travis_path_formula1 <span class="ot">&lt;-</span> <span class="st">'</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a><span class="st"># meaasurement model</span></span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a><span class="st">performance =~ stems + infls + clonediam + leafht + leafwdth</span></span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a><span class="st"># structural model</span></span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a><span class="st">performance ~ geneticdist</span></span>
+<span id="cb75-7"><a href="#cb75-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb75-8"><a href="#cb75-8" aria-hidden="true" tabindex="-1"></a><span class="st"># correlated errors</span></span>
+<span id="cb75-9"><a href="#cb75-9" aria-hidden="true" tabindex="-1"></a><span class="st">leafht ~~ leafwdth</span></span>
+<span id="cb75-10"><a href="#cb75-10" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-18-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-18-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Now let’s fit and check the model:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-19-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-19-1" role="tab" aria-controls="tabset-19-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-19-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-19-2" role="tab" aria-controls="tabset-19-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-19-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-19-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>travis_path_model1 <span class="ot">&lt;-</span> <span class="fu">sem</span>(travis_path_formula1, travis)</span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(travis_path_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6-19 ended normally after 46 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        12
+
+  Number of observations                            23
+
+Model Test User Model:
+                                                      
+  Test statistic                                12.237
+  Degrees of freedom                                 8
+  P-value (Chi-square)                           0.141
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  performance =~                                      
+    stems             1.000                           
+    infls             0.887    0.128    6.929    0.000
+    clonediam         1.007    0.088   11.508    0.000
+    leafht            0.817    0.146    5.601    0.000
+    leafwdth          0.746    0.160    4.650    0.000
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  performance ~                                       
+    geneticdist      -3.124    0.687   -4.547    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+ .leafht ~~                                           
+   .leafwdth          0.388    0.123    3.145    0.002
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .stems             0.072    0.039    1.835    0.067
+   .infls             0.261    0.084    3.108    0.002
+   .clonediam         0.059    0.038    1.570    0.116
+   .leafht            0.367    0.114    3.222    0.001
+   .leafwdth          0.464    0.142    3.278    0.001
+   .performance       0.441    0.145    3.039    0.002</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-19-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-19-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>The model shows a good fit, and a significant negative relationship between plant <code>performance</code> and genetic distance. This supports a general hypothesis that non-local plant tend to not grow (or perform) as well as local populations.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="language">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-20-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-20-1" role="tab" aria-controls="tabset-20-1" aria-selected="true">R</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-20-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-20-2" role="tab" aria-controls="tabset-20-2" aria-selected="false">Python</a></li></ul>
+<div class="tab-content" data-group="language">
+<div id="tabset-20-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-20-1-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lavaanPlot</span>(travis_path_model1, <span class="at">coefs =</span> <span class="cn">TRUE</span>, <span class="at">covs =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div id="tabset-20-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-20-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>travis <span class="op">=</span> pd.read_csv(<span class="st">"./data/travis.csv"</span>)</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>travis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   siteno  latitude  geneticdist   stems  infls  clonediam     leafht  leafwdth
+0       1     37.54      0.47263  15.375   1.00   12.49625  11.830123  1.214805
+1       2     29.34      0.00554  34.875   1.75   46.65625  35.501039  4.328820
+2       3     28.15      0.18589  45.250   4.50   53.25000  48.743576  6.269271
+3       4     29.53      0.25973  16.125   1.75   21.37500  42.909499  4.575165
+4       5     30.23      0.13122  24.250   1.75   22.51750  45.869016  6.231427</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
 </section>
 <section id="summary" class="level2">
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
 <p>TBD</p>
+</section>
+<section id="appendix-data-files" class="level1">
+<h1>Appendix: Data files</h1>
+<section id="tavis-and-grace-dataset-travis.csv" class="level2">
+<h2 class="anchored" data-anchor-id="tavis-and-grace-dataset-travis.csv">Tavis and Grace dataset <em>travis.csv</em></h2>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column header</th>
+<th>Variable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>siteno</td>
+<td>Distance to coast (m)</td>
+</tr>
+<tr class="even">
+<td>latitude</td>
+<td>Elevation a.s.l.</td>
+</tr>
+<tr class="odd">
+<td>geneticdist</td>
+<td>Genetic dissimilarity to local populations</td>
+</tr>
+<tr class="even">
+<td>stems</td>
+<td>Stem density</td>
+</tr>
+<tr class="odd">
+<td>infls</td>
+<td>Number of infloresences</td>
+</tr>
+<tr class="even">
+<td>clonediam</td>
+<td>Clone diameter</td>
+</tr>
+<tr class="odd">
+<td>leafht</td>
+<td>Leaf height</td>
+</tr>
+<tr class="even">
+<td>leafwdth</td>
+<td>Leaf width</td>
+</tr>
+</tbody>
+</table>
+<p>stem density, the number of infloresences, clone diameter,</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

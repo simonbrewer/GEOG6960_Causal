@@ -1,5 +1,5 @@
 ---
-title: "GEOG 6960 Causality in Geog. Studies 8"
+title: "GEOG 6960 Causality in Geog. Studies 9"
 author: 
   - name: "Simon Brewer"
     email: simon.brewer@ess.utah.edu
@@ -25,7 +25,7 @@ use_condaenv("causal")
 
 ## Introduction
 
-In this lab, we're going to test methods for causal discovery. We'll use a synthetic example, and a quick test with the Grace and Keeley fire/plant abundance dataset (*keeley.csv*).
+In this lab, we're going to look at how to estimate moderation in causal models, and introduce working with latent variables. We'll use a synthetic example, and a(nother) ecological dataset on plant adaptation from Travis and Grace (2010) (*travis.csv*).
 
 ## Coding SEMs
 
@@ -387,7 +387,34 @@ travis.head()
 ```
 :::
 
+The output has changed a little, now we have information on the factor loadings under the heading `Latent Variables:`. The estimates here represent the loadings obtained from a factor analysis of the observed variables. These are standardized to the first variable (this will always be 1). Higher values indicate that a variable is a good representative of the LV, and lower values indicate that the variable is influenced by other factors in addition to the LV. 
 
+Two of the variables have fairly low values, but these are sensitive to the scale of the variables. Let's re-run this now with scaled variables:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis <- travis %>%
+  mutate(stems = (stems - mean(stems)) / sd(stems),
+         infls = (infls - mean(infls)) / sd(infls),
+         clonediam = (clonediam - mean(clonediam)) / sd(clonediam),
+         leafht = (leafht - mean(leafht)) / sd(leafht),
+         leafwdth = (leafwdth - mean(leafwdth)) / sd(leafwdth))
+
+travis_latent_model1 <- sem(travis_latent_formula1, travis)
+summary(travis_latent_model1)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+And plot the resulting model.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -404,6 +431,8 @@ travis.head()
 ```
 :::
 
+In the results, we got a significant Chi-squared test. This suggests that some information is lacking in the model. We can use the modification indices to try and work out what might be missing. As a reminder, these show how much the model would improve if a given path is included in the model (look for high values in the `mi` column):
+
 ::: {.panel-tabset group="language"}
 # R
 
@@ -419,6 +448,8 @@ travis.head()
 ```
 :::
 
+The largest value is for the path `leafht ~~  leafwdth`. The double `~~` represents a missing covariance or correlation between variables (here between the width and length of a leaf). We'll include this now and re-run the model. (Note that you could argue for a latent variable representing `leaf size` that links to both of these.)
+
 ::: {.panel-tabset group="language"}
 # R
 
@@ -427,22 +458,7 @@ travis_latent_formula2 <- '
 performance =~ stems + infls + clonediam + leafht + leafwdth
 leafht ~~ leafwdth
 '
-
 travis_latent_model2 <- sem(travis_latent_formula2, travis)
-```
-
-# Python
-
-```{python}
-travis = pd.read_csv("./data/travis.csv")
-travis.head()
-```
-:::
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
 summary(travis_latent_model2)
 ```
 
@@ -458,17 +474,23 @@ travis.head()
 ```
 :::
 
+This has fixed the problem and we now have a non-significant Chi-squared test. 
+
 ### Structural model
+
+The measurement model (above) is used to describe the relationship between an LV and the observed variables that represent it. We can go further by linking this to an observed outcome in a structural model. (Note that you can also use LVs with the outcome, but we won't cover that here.)
+
+To do this, we need to expand the model formula to include both the measurement and strucutral model. We'll also keep the covariance between the two leaf variables.
 
 ::: {.panel-tabset group="language"}
 # R
 
 ```{r}
 travis_path_formula1 <- '
-# latent
+# meaasurement model
 performance =~ stems + infls + clonediam + leafht + leafwdth
 
-# structural paths
+# structural model
 performance ~ geneticdist
 
 # correlated errors
@@ -483,6 +505,8 @@ travis = pd.read_csv("./data/travis.csv")
 travis.head()
 ```
 :::
+
+Now let's fit and check the model:
 
 ::: {.panel-tabset group="language"}
 # R
@@ -499,6 +523,8 @@ travis = pd.read_csv("./data/travis.csv")
 travis.head()
 ```
 :::
+
+The model shows a good fit, and a significant negative relationship between plant `performance` and genetic distance. This supports a general hypothesis that non-local plant tend to not grow (or perform) as well as local populations. 
 
 ::: {.panel-tabset group="language"}
 # R
@@ -518,3 +544,20 @@ travis.head()
 ## Summary
 
 TBD
+
+# Appendix: Data files
+
+## Tavis and Grace dataset *travis.csv*
+
+| Column header | Variable                 |
+|---------------|--------------------------|
+| siteno      | Site ID    |
+| latitude          | Latitude         |
+| geneticdist       | Genetic dissimilarity to local populations    |
+| stems           | Stem density |
+| infls        | Number of infloresences       |
+| clonediam       | Clone diameter        |
+| leafht         | Leaf height          |
+| leafwdth          | Leaf width   |
+
+stem density, the number of infloresences, clone diameter, 
