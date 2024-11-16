@@ -36,6 +36,10 @@ Often in scientific studies we are interested in establishing a cause and effect
     - [Lab notes][lab7]
 - Week 8
     - [Lab notes][lab8]
+- Week 9
+    - [Lab notes][lab9]
+- Week 10
+    - [Lab notes][lab10]
 
 # Data
 
@@ -43,6 +47,7 @@ Often in scientific studies we are interested in establishing a cause and effect
 - Mosquito net dataset ([mosquito_nets.csv][mosquito])
 - Shipley tree mortality dataset ([shipley.csv][shipley])
 - Boreal NDVI dataset ([boreal.csv][boreal])
+- Travis and Grace data set ([travis.csv][travis])
 
 [lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
 [lab3]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week3.html
@@ -50,8 +55,11 @@ Often in scientific studies we are interested in establishing a cause and effect
 [lab6]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week6.html
 [lab7]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week7.html
 [lab8]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week8.html
+[lab9]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week9.html
+[lab10]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week10.html
 
 [keeley]: https://drive.google.com/file/d/1_pOumBe6a783Jap4oyQlF0uJ_IwmjqpZ/view?usp=drive_link
 [mosquito]: https://drive.google.com/file/d/1TbscKcYSuDhOg_FPhb5faIPyNGuNdTUA/view?usp=sharing
 [shipley]: https://drive.google.com/file/d/14MNcR3IT2GsVvHAb1P2r5gZAmiIjoomZ/view?usp=sharing
 [boreal]: https://drive.google.com/file/d/1Kl_nqCETZyg92RL2lVdtGaWcfSDcXE_x/view?usp=sharing
+[travis]: https://drive.google.com/file/d/1CG__WvPOvS_5yUfAoNE4ovD7u77sH_rq/view?usp=sharing
