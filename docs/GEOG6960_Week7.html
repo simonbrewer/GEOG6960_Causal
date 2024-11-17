@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.553">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Simon Brewer">
+<meta name="dcterms.date" content="2024-10-27">
+
+<title>GEOG 6960 Causality in Geog. Studies 7</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#grace-and-keeley-dataset" id="toc-grace-and-keeley-dataset" class="nav-link" data-scroll-target="#grace-and-keeley-dataset">Grace and Keeley Dataset</a>
+  <ul class="collapse">
+  <li><a href="#data-and-libraries" id="toc-data-and-libraries" class="nav-link" data-scroll-target="#data-and-libraries">Data and libraries</a></li>
+  <li><a href="#three-variable-model-1" id="toc-three-variable-model-1" class="nav-link" data-scroll-target="#three-variable-model-1">Three variable model 1</a></li>
+  <li><a href="#three-variable-model-2" id="toc-three-variable-model-2" class="nav-link" data-scroll-target="#three-variable-model-2">Three variable model 2</a></li>
+  <li><a href="#full-model" id="toc-full-model" class="nav-link" data-scroll-target="#full-model">Full model</a></li>
+  <li><a href="#nonlinear-models" id="toc-nonlinear-models" class="nav-link" data-scroll-target="#nonlinear-models">Nonlinear models</a></li>
+  </ul></li>
+  <li><a href="#generalized-and-mixed-effects-models" id="toc-generalized-and-mixed-effects-models" class="nav-link" data-scroll-target="#generalized-and-mixed-effects-models">Generalized and mixed effects models</a></li>
+  <li><a href="#spatial-models" id="toc-spatial-models" class="nav-link" data-scroll-target="#spatial-models">Spatial models</a></li>
+  <li><a href="#appendix-data-files" id="toc-appendix-data-files" class="nav-link" data-scroll-target="#appendix-data-files">Appendix: Data files</a>
+  <ul class="collapse">
+  <li><a href="#grace-and-keeley-dataset-keeley.csv" id="toc-grace-and-keeley-dataset-keeley.csv" class="nav-link" data-scroll-target="#grace-and-keeley-dataset-keeley.csv">Grace and Keeley dataset <em>keeley.csv</em></a></li>
+  <li><a href="#shipley-dataset-shipley.csv" id="toc-shipley-dataset-shipley.csv" class="nav-link" data-scroll-target="#shipley-dataset-shipley.csv">Shipley dataset <em>shipley.csv</em></a></li>
+  <li><a href="#boreal-dataset-boreal.csv" id="toc-boreal-dataset-boreal.csv" class="nav-link" data-scroll-target="#boreal-dataset-boreal.csv">Boreal dataset <em>boreal.csv</em></a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">GEOG 6960 Causality in Geog. Studies 7</h1>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Simon Brewer <a href="mailto:simon.brewer@ess.utah.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            University of Utah
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 27, 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In this lab, we’ll look at an alternative way of fitting structural equation models (SEMs) using a piecewise approach. This method was developed by Shipley and coworkers over the past 15 years, and has a number of advantages, mainly including a broader range of data types and structures within the SEM. We will use the following datasets:</p>
+<ul>
+<li>The Grace and Keeley fire/plant abundance dataset (<em>keeley.csv</em>)</li>
+<li>A data set of tree mortality from Shipley (2009): <em>shipley.csv</em></li>
+</ul>
+<p>As the name implies, this approach works by <em>piecing</em> together individual models, each of which describes one <em>endogenous</em> variable in the graph. This contrasts with the covariance-based approach of <strong>lavaan</strong> and <strong>semopy</strong> that try to estimate a single model of the covariance model underlying the system. As a result, each individual model can be built using different assumptions (generalized linear models, non-linear models, etc), and we will explore some of this here.</p>
+<p>Currently, this approach is only available through the R library <strong>piecewiseSEM</strong> developed by Lefcheck (https://doi.org/10.1111/2041-210X.12512). It is possible to carry out a similar in other languages, but some of the tests and visualizations would require additional work.</p>
+</section>
+<section id="grace-and-keeley-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="grace-and-keeley-dataset">Grace and Keeley Dataset</h2>
+<section id="data-and-libraries" class="level3">
+<h3 class="anchored" data-anchor-id="data-and-libraries">Data and libraries</h3>
+<p>As ever, let’s start by loading the libraries we will need:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(correlation)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(piecewiseSEM)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+  This is piecewiseSEM version 2.3.0.
+
+
+  Questions or bugs can be addressed to &lt;LefcheckJ@si.edu&gt;.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lme4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: Matrix
+
+Attaching package: 'Matrix'
+
+The following objects are masked from 'package:tidyr':
+
+    expand, pack, unpack</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: nlme
+
+Attaching package: 'nlme'
+
+The following object is masked from 'package:lme4':
+
+    lmList
+
+The following object is masked from 'package:dplyr':
+
+    collapse
+
+This is mgcv 1.9-1. For overview type 'help("mgcv-package")'.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Linking to GEOS 3.11.0, GDAL 3.5.3, PROJ 9.1.0; sf_use_s2() is TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tmap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Breaking News: tmap 3.x is retiring. Please test v4, e.g. with
+remotes::install_github('r-tmap/tmap')</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nlme)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ape)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'ape'
+
+The following object is masked from 'package:dplyr':
+
+    where</code></pre>
+</div>
+</div>
+<p>Now load the dataset:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>keeley <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"./data/keeley.csv"</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(keeley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   90 obs. of  8 variables:
+ $ distance: num  53.4 37 53.7 53.7 52 ...
+ $ elev    : int  1225 60 200 200 970 970 950 740 170 190 ...
+ $ abiotic : num  60.7 40.9 51 61.2 46.7 ...
+ $ age     : int  40 25 15 15 23 24 35 14 45 35 ...
+ $ hetero  : num  0.757 0.491 0.844 0.691 0.546 ...
+ $ firesev : num  3.5 4.05 2.6 2.9 4.3 4 4.8 4.8 7.25 6.2 ...
+ $ cover   : num  1.039 0.478 0.949 1.195 1.298 ...
+ $ rich    : int  51 31 71 64 68 34 39 66 25 31 ...</code></pre>
+</div>
+</div>
+<p>And let’s plot the correlation matrix:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>cor_res <span class="ot">&lt;-</span> <span class="fu">correlation</span>(keeley)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">cor_sort</span>(<span class="fu">as.matrix</span>(cor_res))</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">visualisation_recipe</span>(x))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="three-variable-model-1" class="level3">
+<h3 class="anchored" data-anchor-id="three-variable-model-1">Three variable model 1</h3>
+<p>Before building the full SEM for these data, we’ll start with the simple three variable model that includes <code>age</code>, <code>firesev</code> and <code>cover</code>. To build the piecewise model, there are a couple of options: you can build the individual models within the piecewise function (<code>psem</code>) or you can build the individual models first, then use <code>psem</code> to link them. We’ll use this second approach as it is a little easier to check what is going on.</p>
+<p>As a reminder, this is the DAG for the three variable model, as a partially mediated model:</p>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'ggdag'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:stats':
+
+    filter</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The two endogenous variables are fire severity (<code>firesev</code>) and canopy cover (<code>cover</code>), so let’s build the two models that describe these according to the DAG using simple OLS linear regression:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(firesev <span class="sc">~</span> age, <span class="at">data =</span> keeley)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(cover <span class="sc">~</span> age <span class="sc">+</span> firesev, <span class="at">data =</span> keeley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As these are just basic linear models, you can use all the usual functions to check them and get more information. Here is the summary output for them:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = firesev ~ age, data = keeley)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.7199 -1.1131 -0.1747  0.9603  4.6091 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  3.03921    0.35543   8.551 3.45e-13 ***
+age          0.05968    0.01249   4.778 7.03e-06 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.481 on 88 degrees of freedom
+Multiple R-squared:  0.206, Adjusted R-squared:  0.197 
+F-statistic: 22.83 on 1 and 88 DF,  p-value: 7.028e-06</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = cover ~ age + firesev, data = keeley)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.49374 -0.22801 -0.06249  0.19985  0.81227 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  1.121762   0.092030  12.189  &lt; 2e-16 ***
+age         -0.004833   0.002682  -1.802  0.07503 .  
+firesev     -0.067244   0.020399  -3.296  0.00142 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.2833 on 87 degrees of freedom
+Multiple R-squared:  0.2202,    Adjusted R-squared:  0.2023 
+F-statistic: 12.28 on 2 and 87 DF,  p-value: 2.003e-05</code></pre>
+</div>
+</div>
+<p>Both models explain about 20% of the variance in the outcome, which is not great, but the coefficients and models do show significance.</p>
+<p>Now, we’ll build the piecewise SEM. This does not require refitting the models, but instead links them together to allow for testing.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>keeley_psem1 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  mod1, mod2,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> keeley</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>keeley_psem1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Structural Equations of x :
+lm: firesev ~ age
+lm: cover ~ age + firesev
+
+Data:
+  distance elev  abiotic age   hetero firesev     cover rich
+1 53.40900 1225 60.67103  40 0.757065    3.50 1.0387974   51
+2 37.03745   60 40.94291  25 0.491340    4.05 0.4775924   31
+3 53.69565  200 50.98805  15 0.844485    2.60 0.9489357   71
+4 53.69565  200 61.15633  15 0.690847    2.90 1.1949002   64
+5 51.95985  970 46.66807  23 0.545628    4.30 1.2981890   68
+6 51.95985  970 39.82357  24 0.652895    4.00 1.1734866   34
+...with  84  more rows
+
+[1] "class(psem)"</code></pre>
+</div>
+</div>
+<p>As you can see, the model object simply contains a list of the component models and a brief overview of the data. To test the overall SEM, we need to use the <code>summary</code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_psem1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of keeley_psem1 
+
+Call:
+  firesev ~ age
+  cover ~ age + firesev
+
+    AIC
+ 363.399
+
+---
+Tests of directed separation:
+
+ No independence claims present. Tests of directed separation not possible.
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = 0 with P-value = 1 and on 0 degrees of freedom
+Fisher's C = NA with P-value = NA and on 0 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate    
+   firesev       age   0.0597    0.0125 88     4.7781  0.0000       0.4539 ***
+     cover       age  -0.0048    0.0027 87    -1.8018  0.0750      -0.1914    
+     cover   firesev  -0.0672    0.0204 87    -3.2965  0.0014      -0.3502  **
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response method R.squared
+   firesev   none      0.21
+     cover   none      0.22</code></pre>
+</div>
+</div>
+<p>And again, there’s a lot of output. Let’s go through this from top to bottom:</p>
+<ul>
+<li><code>Structural Equation Model</code>: this first section describes the models that were linked, as well as returning the AIC for the full PSEM model (note that this is the just the sum of the individual AICs)</li>
+<li><code>Tests of directed separation</code>: This section tests any missing paths in the model to see if excluding them is justified or not. As the model we have fit is just identified (or saturated), then there are no missing paths to test</li>
+<li><code>Global goodness-of-fit</code>: Two tests are presented here. The first is an approximation of the Chi-squared test used in covariance models. The second (Fisher’s <span class="math inline">\(C\)</span>) is based on the d-separation tests</li>
+<li><code>Coefficients</code>: a summary of the model coefficients, including standardized coefficients. This should give the same results as the summaries of the two individual <code>lm</code> models above</li>
+<li><code>Individual R-squared</code>: the variance explained for each endogenous variable</li>
+</ul>
+<p>In this case, the model is just identified, so the additional work of fitting the SEM cannot provide us with any additional information.</p>
+</section>
+<section id="three-variable-model-2" class="level3">
+<h3 class="anchored" data-anchor-id="three-variable-model-2">Three variable model 2</h3>
+<p>Now let’s drop the path between <code>age</code> and <code>cover</code>, refit the models and re-run the PSEM.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(firesev <span class="sc">~</span> age, <span class="at">data =</span> keeley)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(cover <span class="sc">~</span> firesev, <span class="at">data =</span> keeley)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>keeley_psem2 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  mod1, mod2,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> keeley</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And now test the model (we’ll suppresses the progress bar for the purposes of this document):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_psem2, <span class="at">.progressBar =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of keeley_psem2 
+
+Call:
+  firesev ~ age
+  cover ~ firesev
+
+    AIC
+ 364.696
+
+---
+Tests of directed separation:
+
+     Independ.Claim Test.Type DF Crit.Value P.Value 
+  cover ~ age + ...      coef 87    -1.8018   0.075 
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = 3.297 with P-value = 0.069 and on 1 degrees of freedom
+Fisher's C = 5.18 with P-value = 0.075 and on 2 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate    
+   firesev       age   0.0597    0.0125 88     4.7781       0       0.4539 ***
+     cover   firesev  -0.0839    0.0184 88    -4.5594       0      -0.4371 ***
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response method R.squared
+   firesev   none      0.21
+     cover   none      0.19</code></pre>
+</div>
+</div>
+<p>Now building the PSEM makes sense - we’re able to test whether excluding the <code>age</code> to <code>cover</code> path makes sense. Both the Chi-squared and Fisher’s <span class="math inline">\(C\)</span> test are non-significant, which indicates that there is no support for this path in the data, which in turn confirms that excluding it makes sense. This is also shown in the d-separation tests, which shows a test for this excluded path, and the lack of significance further supports the absence of this path. In fact, as we are only excluding a single path, the d-separation and Fisher’s <span class="math inline">\(C\)</span> test are equal.</p>
+<p><strong>piecewiseSEM</strong> also comes with visualization function. We’ll use it here to show the paths for this second model, as well as the unstandardized coefficients. (This is built on top of DiagrammeR, a general network visualization package in R, which can be used to further modify the plot.)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(keeley_psem2, <span class="at">show =</span> <span class="st">"unstd"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/psem2.png" class="img-fluid figure-img"></p>
+<figcaption>PSEM model</figcaption>
+</figure>
+</div>
+</section>
+<section id="full-model" class="level3">
+<h3 class="anchored" data-anchor-id="full-model">Full model</h3>
+<p>We’ll finish this section by building the full Grace and Keeley model. The code below builds the individual models with the <code>psem</code> function to minimize the code, but you can try to build these first then link them together:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>keeley_psem3 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(hetero <span class="sc">~</span> distance, <span class="at">data =</span> keeley),</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(abiotic <span class="sc">~</span> distance, <span class="at">data =</span> keeley),</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(age <span class="sc">~</span> distance, <span class="at">data =</span> keeley),</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(firesev <span class="sc">~</span> age, <span class="at">data =</span> keeley),</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(cover <span class="sc">~</span> firesev, <span class="at">data =</span> keeley),</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(rich <span class="sc">~</span> distance <span class="sc">+</span> abiotic <span class="sc">+</span> hetero <span class="sc">+</span> cover, <span class="at">data =</span> keeley),</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> keeley</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_psem3, <span class="at">.progressBar =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of keeley_psem3 
+
+Call:
+  hetero ~ distance
+  abiotic ~ distance
+  age ~ distance
+  firesev ~ age
+  cover ~ firesev
+  rich ~ distance + abiotic + hetero + cover
+
+    AIC
+ 2223.736
+
+---
+Tests of directed separation:
+
+            Independ.Claim Test.Type DF Crit.Value P.Value   
+  firesev ~ distance + ...      coef 87    -1.6793  0.0967   
+    cover ~ distance + ...      coef 87     1.3302  0.1869   
+    abiotic ~ hetero + ...      coef 87     1.3296  0.1871   
+        age ~ hetero + ...      coef 87     0.0043  0.9966   
+    firesev ~ hetero + ...      coef 86     0.4923  0.6237   
+      cover ~ hetero + ...      coef 86    -2.7229  0.0078 **
+       age ~ abiotic + ...      coef 87    -0.0652  0.9481   
+   firesev ~ abiotic + ...      coef 86    -0.9713  0.3341   
+     cover ~ abiotic + ...      coef 86    -0.2678  0.7895   
+          rich ~ age + ...      coef 84    -0.8515  0.3969   
+         cover ~ age + ...      coef 86    -1.5896  0.1156   
+      firesev ~ rich + ...      coef 83    -1.2434  0.2172   
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = 29.852 with P-value = 0.005 and on 13 degrees of freedom
+Fisher's C = 34.017 with P-value = 0.084 and on 24 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate    
+    hetero  distance   0.0045    0.0013 88     3.4593  0.0008       0.3460 ***
+   abiotic  distance   0.3998    0.0823 88     4.8562  0.0000       0.4597 ***
+       age  distance  -0.3959    0.1457 88    -2.7164  0.0079      -0.2781  **
+   firesev       age   0.0597    0.0125 88     4.7781  0.0000       0.4539 ***
+     cover   firesev  -0.0839    0.0184 88    -4.5594  0.0000      -0.4371 ***
+      rich  distance   0.4840    0.1526 85     3.1710  0.0021       0.2829  **
+      rich   abiotic   0.4908    0.1646 85     2.9815  0.0037       0.2495  **
+      rich    hetero  44.5119   10.8473 85     4.1035  0.0001       0.3383 ***
+      rich     cover  13.6481    3.7601 85     3.6297  0.0005       0.2866 ***
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response method R.squared
+    hetero   none      0.12
+   abiotic   none      0.21
+       age   none      0.08
+   firesev   none      0.21
+     cover   none      0.19
+      rich   none      0.54</code></pre>
+</div>
+</div>
+<p>And we’ll show the plot with standardized coefficients to easier comparison between the paths:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(keeley_psem3, <span class="at">show =</span> <span class="st">"std"</span>, <span class="at">ns_dashed =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/psem3.png" class="img-fluid figure-img"></p>
+<figcaption>PSEM model</figcaption>
+</figure>
+</div>
+<p>There is, not surprisingly, much more output here. There are more individual models, more paths, and more <em>missing</em> paths as shown by the large number of d-separation tests. Note that, unlike the covariance approaches, this function uses the structure of the graph ito intuit the direction of the missing paths (i.e.&nbsp;it tests <code>firesev ~ distance</code> not the other way around).</p>
+<p>The two global tests provide slightly different information this time. The Chi-squared test is significant, whereas <span class="math inline">\(C\)</span> is not (although it is close). From the d-sep tests, you should see that one missing path is flagged as significant. Try not to rebuild and test this SEM with the additional path added back in. Check the AIC of the previous model and this one to see whether including this appears to made an overall improvement.</p>
+</section>
+<section id="nonlinear-models" class="level3">
+<h3 class="anchored" data-anchor-id="nonlinear-models">Nonlinear models</h3>
+<p>next, we’ll look very quickly at an example of including a non-linear model (a spline-based generalized additive model). We’ll make a new version of the second 3-variable model, which includes paths from <code>age</code> to <code>firesev</code> and <code>firesev</code> to <code>cover</code>. For this, we’ll add a nonlinear relationship for the first of these, based on the following scatterplot which shows a weakening of the link between these variables at higher values of <code>age</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(keeley, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> firesev)) <span class="sc">+</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To do this, we’ll use the <code>gam()</code> function from the library <strong>mgcv</strong>. We’ll simply replace the first of the two models using this function and the <code>s()</code> to indicate using a smoothing spline to model the response of <code>firesev</code> to <code>age</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">gam</span>(firesev <span class="sc">~</span> <span class="fu">s</span>(age), <span class="at">data =</span> keeley)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(cover <span class="sc">~</span> firesev, <span class="at">data =</span> keeley)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>keeley_psem4 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  mod1, mod2,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> keeley</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(keeley_psem4, <span class="at">.progressBar =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Basis set includes smoothed terms in independence claim: claim is
+conducted with linear term!</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Categorical or non-linear variables detected. Please refer to
+documentation for interpretation of Estimates!</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of keeley_psem4 
+
+Call:
+  firesev ~ s(age)
+  cover ~ firesev
+
+    AIC
+ 361.226
+
+---
+Tests of directed separation:
+
+        Independ.Claim Test.Type DF Crit.Value P.Value 
+  cover ~ s(age) + ...      coef 87    -1.8018   0.075 
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = 3.297 with P-value = 0.069 and on 1 degrees of freedom
+Fisher's C = 5.18 with P-value = 0.075 and on 2 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error      DF Crit.Value P.Value Std.Estimate
+   firesev    s(age)        -         -  2.7886    10.1726       0            -
+     cover   firesev  -0.0839    0.0184 88.0000    -4.5594       0      -0.4371
+     
+  ***
+  ***
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response method R.squared
+   firesev   none      0.24
+     cover   none      0.19</code></pre>
+</div>
+</div>
+<p>A couple of things to note here. This doesn’t change the global model fit: these tests are based on the same missing path as the previous model. Second, there is no coefficient listed for the first model: as this is a nonlinear model, there is no single coefficient. If you want to see what this looks like, you can simply plot the individual model response:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(keeley_psem4[[<span class="dv">1</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Let’s finish this section by comparing the AIC of these two models to see if including the smoother improves overall model fit (despite the additional complexity):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(keeley_psem2, keeley_psem4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      AIC     K  n
+1 364.696 6.000 90
+2 361.226 7.208 90</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="generalized-and-mixed-effects-models" class="level2">
+<h2 class="anchored" data-anchor-id="generalized-and-mixed-effects-models">Generalized and mixed effects models</h2>
+<p>For this example, we’ll use a synthetic dataset of tree growth and survival from Shipley’s 2009 paper. These data are longitudinal, with repeated observations for each tree. The trees are also grouped by site (there are 20 sites). The model that we will fit follows this graph:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>shipley_dag <span class="ot">&lt;-</span> <span class="fu">dagify</span>(DD <span class="sc">~</span> lat,</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>                      date <span class="sc">~</span> DD,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>                      growth <span class="sc">~</span> date,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                      live <span class="sc">~</span> growth,</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">coords =</span> <span class="fu">list</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="at">lat =</span> <span class="dv">1</span>,</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">DD =</span> <span class="dv">2</span>,</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">date =</span> <span class="dv">3</span>,</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">growth =</span> <span class="dv">4</span>,</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">live =</span> <span class="dv">5</span>), </span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">y =</span> <span class="fu">c</span>(<span class="at">lat =</span> <span class="dv">1</span>,</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">DD =</span> <span class="dv">2</span>,</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">date =</span> <span class="dv">3</span>,</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">growth =</span> <span class="dv">2</span>,</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">live =</span> <span class="dv">1</span>)</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>                      ),</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>                      <span class="at">labels =</span> <span class="fu">c</span>(<span class="at">lat =</span> <span class="st">"Latitude"</span>,</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">DD =</span> <span class="st">"Degree Day"</span>,</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">date =</span> <span class="st">"Date"</span>,</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">growth =</span> <span class="st">"Growth"</span>,</span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">live =</span> <span class="st">"Live"</span>)</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a><span class="fu">ggdag</span>(shipley_dag, <span class="at">use_labels =</span> <span class="st">"label"</span>, </span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">text =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_dag</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The DAG represents the following processes (taken from Shipley (2009)):</p>
+<blockquote class="blockquote">
+<p>Latitude and year generate the number of degree-days at each site. Degree-days then cause the date of bud burst of a tree species. The date of bud burst causes the amount of diameter growth, and diameter growth determines the survival in the subsequent winter</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>shipley <span class="sc">%&gt;%</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tree =</span> <span class="fu">as.factor</span>(tree),</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">site =</span> <span class="fu">as.factor</span>(site)) <span class="sc">%&gt;%</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> Growth, <span class="at">col =</span> tree)) <span class="sc">+</span> </span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>site) <span class="sc">+</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()  <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 469 rows containing missing values or values outside the scale range
+(`geom_line()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>There are two additional complexities with these data.</p>
+<p>First, the outcome we want to model is a binary variable (1 = live in a given year, 0 = dead). The appropriate model for these data is a binomial model with a logit link function.</p>
+<p>The second is that the data are grouped: we have repeated observations by tree (for multiple year) and by site (for multiple trees). To account for this structure, we would need to include random effects for both site and tree.</p>
+<p>We’ll use R’s <strong>lme4</strong> library to build these models. For the first three paths, we’ll assume a linear reponse, so we can use the <code>lmer()</code> function. Random effects are included by the following syntax <code>+ (1 | g)</code> where <code>g</code> is the grouping variable (site or tree here).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lmer</span>(DD <span class="sc">~</span> lat <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> tree) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), <span class="at">data =</span> shipley)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">lmer</span>(Date <span class="sc">~</span> DD <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> tree) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), <span class="at">data =</span> shipley)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>mod3 <span class="ot">&lt;-</span> <span class="fu">lmer</span>(Growth <span class="sc">~</span> Date <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> tree) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), <span class="at">data =</span> shipley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As before, you can check any of the individual models with the <code>summary()</code> function or any other standard diagnostics.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Linear mixed model fit by REML ['lmerMod']
+Formula: DD ~ lat + (1 | tree) + (1 | site)
+   Data: shipley
+
+REML criterion at convergence: 9157.6
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-2.51037 -0.77506 -0.05222  0.77363  2.62452 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ tree     (Intercept)  2.539   1.593   
+ site     (Intercept) 20.157   4.490   
+ Residual             32.139   5.669   
+Number of obs: 1431, groups:  tree, 100; site, 20
+
+Fixed effects:
+            Estimate Std. Error t value
+(Intercept) 196.6524     7.6606  25.671
+lat          -0.8355     0.1194  -6.996
+
+Correlation of Fixed Effects:
+    (Intr)
+lat -0.991</code></pre>
+</div>
+</div>
+<p>For the <code>Live</code> variable, we’ll need to specify a binomial model using <code>glmer</code>, with appropriate <code>family</code> arguments</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>mod4 <span class="ot">&lt;-</span> <span class="fu">glmer</span>(Live <span class="sc">~</span> Growth <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> tree) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">"logit"</span>), <span class="at">data =</span> shipley)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can now link all of these using <code>psem</code> to create the PSEM:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>shipley_psem1 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  mod1, mod2, mod3, mod4,</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> shipley</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: NAs detected in the dataset. Consider removing all rows with NAs to
+prevent fitting to different subsets of data</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(shipley_psem1, <span class="at">.progressBar =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>boundary (singular) fit: see help('isSingular')
+boundary (singular) fit: see help('isSingular')
+boundary (singular) fit: see help('isSingular')</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of shipley_psem1 
+
+Call:
+  DD ~ lat
+  Date ~ DD
+  Growth ~ Date
+  Live ~ Growth
+
+    AIC
+ 21745.782
+
+---
+Tests of directed separation:
+
+      Independ.Claim Test.Type        DF Crit.Value P.Value 
+    Date ~ lat + ...      coef   18.0428     0.0064  0.9373 
+  Growth ~ lat + ...      coef   18.2781     0.7972  0.3835 
+    Live ~ lat + ...      coef 1431.0000     1.0282  0.3038 
+   Growth ~ DD + ...      coef  783.7024     0.0861  0.7693 
+     Live ~ DD + ...      coef 1431.0000     1.0036  0.3156 
+   Live ~ Date + ...      coef 1431.0000    -1.5627  0.1181 
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = NA with P-value = NA and on 6 degrees of freedom
+Fisher's C = 11.532 with P-value = 0.484 and on 12 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error        DF Crit.Value P.Value
+        DD       lat  -0.8355    0.1194   17.9831    48.9350       0
+      Date        DD  -0.4976    0.0049 1337.0585 10171.1806       0
+    Growth      Date   0.3007    0.0266 1400.8657   126.4361       0
+      Live    Growth   0.3479    0.0584 1431.0000     5.9544       0
+  Std.Estimate    
+       -0.7014 ***
+       -0.6281 ***
+        0.3824 ***
+        0.7866 ***
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response      method Marginal Conditional
+        DD        none     0.48        0.69
+      Date        none     0.41        0.98
+    Growth        none     0.11        0.84
+      Live theoretical     0.56        0.63</code></pre>
+</div>
+</div>
+<p>Some things to note in this output:</p>
+<ul>
+<li>You will like have seen some warnings about singular fits: this suggests that some of the models that include the d-separated variable paths could not be fit well, and may suggest that some data standardization is necessary.</li>
+<li>With that caveat in mind, none of the missing paths were significant</li>
+<li>Fisher’s <span class="math inline">\(C\)</span> supports this, suggesting that the model (and DAG) and well supported by the data</li>
+<li>The Chi-squared test cannot be calculated due to the presence of the binomial model</li>
+<li>The coefficient shown for the binomial model (<code>~0.348</code>) is on the logit scale (from the binomial model). To convert this to odds, simply take the anti-log (<code>exp</code>), which should give you a value of approximately 1.4, indicating an increasing survival probability with higher growth.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/psem4.png" class="img-fluid figure-img"></p>
+<figcaption>PSEM model</figcaption>
+</figure>
+</div>
+</section>
+<section id="spatial-models" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-models">Spatial models</h2>
+<p>As a last example, we’ll look at the use of spatial models within piecewiseSEM. As a reminder, our concern with spatial models is that the errors or residuals will be autocorrelated, which implies that the standard errors and model <span class="math inline">\(p\)</span>-values will be biased. Incorporating spatial covariance can then help to accoutn for this. To illustrate, we’ll use a data set of (more!) trees taken from a forest plot from the Volzhsko-Kamsky reserve in Russia. This example is lightly modified from Jed Byrnes’ SEM workshop (https://jebyrnes.github.io/semclass). Let’s start by reading in the data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>boreal <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"./data/boreal.csv"</span>)</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(boreal)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  point       x       y richness     NDVI   temp        wet
+1     1 2109.70 2093.52       13 0.480180 23.217 -0.0264378
+2     2 2190.18 2105.71       21 0.483990 23.217 -0.0234048
+3     3 2064.48 2052.77       30 0.489213 23.217 -0.0189264
+4     4 2277.34 2103.42       13 0.473226 23.217 -0.0280431
+5     5 2347.91 2074.81       13 0.405898 23.635 -0.0292287
+6     6 2437.21 2086.95        6 0.424769 23.217 -0.0229209</code></pre>
+</div>
+</div>
+<p>And let’s convert this to a simple feature (spatial) object for plotting:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>boreal_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(boreal, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"y"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(boreal_sf) <span class="sc">+</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_symbols</span>(<span class="at">col =</span> <span class="st">"NDVI"</span>, <span class="at">size =</span> <span class="fl">0.75</span>, <span class="at">alpha =</span> <span class="fl">0.75</span>, </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">palette =</span> <span class="st">"Greens"</span>, <span class="at">style =</span> <span class="st">"fisher"</span>) <span class="sc">+</span></span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">legend.outside =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Here’s the DAG for these data (it’s simplifed from the full dataset). This implies some of the following processes:</p>
+<ul>
+<li>Warmer temperatures increase richness and productivity (NDVI)</li>
+<li>Wetter habitats (more negative <code>wet</code>) increase productivity</li>
+<li>Higher richness increases productivity</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Let’s now fit this model. We’ll start with non-spatial models for the two endogenous variables (<code>richness</code> and <code>NDVI</code>)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(richness <span class="sc">~</span> temp, <span class="at">data =</span> boreal)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(NDVI <span class="sc">~</span> richness <span class="sc">+</span> temp <span class="sc">+</span> wet, <span class="at">data =</span> boreal)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And let’s link these into a PSEM:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>boreal_psem1 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  mod1, mod2,</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> boreal</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(boreal_psem1, <span class="at">.progressBar =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of boreal_psem1 
+
+Call:
+  richness ~ temp
+  NDVI ~ richness + temp + wet
+
+    AIC
+ 2166.646
+
+---
+Tests of directed separation:
+
+        Independ.Claim Test.Type  DF Crit.Value P.Value 
+  richness ~ wet + ...      coef 530    -1.0421  0.2979 
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = 1.091 with P-value = 0.296 and on 1 degrees of freedom
+Fisher's C = 2.422 with P-value = 0.298 and on 2 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error  DF Crit.Value P.Value Std.Estimate    
+  richness      temp   1.1707    0.5470 531     2.1402  0.0328       0.0925   *
+      NDVI  richness  -0.0004    0.0002 529    -2.0862  0.0374      -0.0440   *
+      NDVI      temp  -0.0355    0.0023 529   -15.6564  0.0000      -0.3456 ***
+      NDVI       wet  -4.2701    0.1329 529   -32.1406  0.0000      -0.7066 ***
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response method R.squared
+  richness   none      0.01
+      NDVI   none      0.77</code></pre>
+</div>
+</div>
+<p>The richness model is not particularly good here, but does show some significance in the relationship with temperature (<code>temp</code>).</p>
+<p>As these are spatial data, it’s important to check for autocorrelation in the residuals. We can first do this by mapping these out. If there’s little or no autocorrelation, then the pattern should be random. The <code>residuals</code> function will extract the residuals for both models (richness and NDVI):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>boreal_sf<span class="sc">$</span>richness_res <span class="ot">&lt;-</span> <span class="fu">residuals</span>(boreal_psem1)[,<span class="dv">1</span>]</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>boreal_sf<span class="sc">$</span>ndvi_res <span class="ot">&lt;-</span> <span class="fu">residuals</span>(boreal_psem1)[,<span class="dv">2</span>]</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(boreal_sf) <span class="sc">+</span></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_symbols</span>(<span class="at">col =</span> <span class="st">"richness_res"</span>, <span class="at">size =</span> <span class="fl">0.75</span>, <span class="at">alpha =</span> <span class="fl">0.75</span>,</span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>             <span class="at">style =</span> <span class="st">"fisher"</span>) <span class="sc">+</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">legend.outside =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">tm_shape</span>(boreal_sf) <span class="sc">+</span></span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_symbols</span>(<span class="at">col =</span> <span class="st">"ndvi_res"</span>, <span class="at">size =</span> <span class="fl">0.75</span>, <span class="at">alpha =</span> <span class="fl">0.75</span>,</span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">style =</span> <span class="st">"fisher"</span>) <span class="sc">+</span></span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">legend.outside =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(m1, m2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="GEOG6960_Week7_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>While there’s some pattern, it’s not particularly clear. Instead, we can use Moran’s <span class="math inline">\(I\)</span> to test if there is any significant pattern that we need to worry about. Moran’s <span class="math inline">\(I\)</span> requires an adjacency matrix: a matrix describing the proximity of each observation to the others. For point data, we can estimate this simply as the inverse distance between observations. (Note that the diagonal needs to be set to zero to avoid self referencing):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>distMat <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">dist</span>(</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(boreal<span class="sc">$</span>x, boreal<span class="sc">$</span>y))</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>distsInv <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span>distMat</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a><span class="fu">diag</span>(distsInv) <span class="ot">&lt;-</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we can use the <code>Moran.I</code> function from the <strong>ape</strong> package to estimate this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Moran.I</span>(boreal_sf<span class="sc">$</span>richness_res, distsInv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$observed
+[1] 0.03853411
+
+$expected
+[1] -0.001879699
+
+$sd
+[1] 0.003998414
+
+$p.value
+[1] 0</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Moran.I</span>(boreal_sf<span class="sc">$</span>ndvi_res, distsInv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$observed
+[1] 0.08014145
+
+$expected
+[1] -0.001879699
+
+$sd
+[1] 0.003986118
+
+$p.value
+[1] 0</code></pre>
+</div>
+</div>
+<p>In both cases, the low <span class="math inline">\(p\)</span>-value indicates that the residuals are correlated. To fix this, we can replace the OLS-based <code>lm</code> models with generalized least squares (GLS) models. GLS allows the incorporation of <em>covariance</em> models. These can account for autocorrelation from a variety of sources: space, time and groups. The R library <strong>nlme</strong> has functions for GLS models, including a range of covariance type (see <code>help(corClasses)</code> for the full range). We’ll use one of the simplest (<code>corExp</code>), which assumes that spatial dependency (or autocorrelation) declines exponentially with distance between observations. We’ll use the same function in both models (richness and NDVI), so let’s create a single object to be used in both:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Fit using spatial autocorrelation</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>spaceCor <span class="ot">&lt;-</span> <span class="fu">corExp</span>(<span class="at">form =</span><span class="sc">~</span> x<span class="sc">+</span>y, <span class="at">nugget =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we’ll build the GLS models, including the corvariance functions with with <code>correlation</code> argument:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>richness_gls <span class="ot">&lt;-</span> <span class="fu">gls</span>(richness <span class="sc">~</span> temp,</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">correlation =</span> spaceCor,</span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">data =</span> boreal)</span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>ndvi_gls<span class="ot">&lt;-</span> <span class="fu">gls</span>(NDVI <span class="sc">~</span> richness <span class="sc">+</span> temp <span class="sc">+</span> wet,</span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">correlation =</span> spaceCor,</span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">data=</span>boreal)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And we can now use Moran’s <span class="math inline">\(I\)</span> to test if using the covariance functions has accounted for the autocorrelation. (The argument <code>type="normalized"</code> indicates that we want the <em>adjusted</em> residuals.)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>boreal_sf<span class="sc">$</span>richness_res <span class="ot">&lt;-</span> <span class="fu">residuals</span>(richness_gls,</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">type =</span> <span class="st">"normalized"</span>)</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Moran.I</span>(boreal_sf<span class="sc">$</span>richness_res, distsInv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$observed
+[1] -0.004073926
+
+$expected
+[1] -0.001879699
+
+$sd
+[1] 0.003995004
+
+$p.value
+[1] 0.5828389</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>boreal_sf<span class="sc">$</span>ndvi_res <span class="ot">&lt;-</span> <span class="fu">residuals</span>(ndvi_gls,</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">type =</span> <span class="st">"normalized"</span>)</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Moran.I</span>(boreal_sf<span class="sc">$</span>ndvi_res, distsInv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$observed
+[1] -0.00179094
+
+$expected
+[1] -0.001879699
+
+$sd
+[1] 0.003991756
+
+$p.value
+[1] 0.98226</code></pre>
+</div>
+</div>
+<p>Both tests are non-significant, indicating that the autocorrelation has been accounted for.</p>
+<p>Finally, we can remake the PSEM model with the two spatial models:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>boreal_psem2 <span class="ot">&lt;-</span> <span class="fu">psem</span>(</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>  richness_gls,</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>  ndvi_gls,</span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> boreal</span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(boreal_psem2, <span class="at">.progressBar =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Structural Equation Model of boreal_psem2 
+
+Call:
+  richness ~ temp
+  NDVI ~ richness + temp + wet
+
+    AIC
+ 1983.090
+
+---
+Tests of directed separation:
+
+        Independ.Claim Test.Type  DF Crit.Value P.Value 
+  richness ~ wet + ...      coef 533    -0.8368  0.4031 
+
+--
+Global goodness-of-fit:
+
+Chi-Squared = 9.99 with P-value = 0.002 and on 1 degrees of freedom
+Fisher's C = 1.817 with P-value = 0.403 and on 2 degrees of freedom
+
+---
+Coefficients:
+
+  Response Predictor Estimate Std.Error  DF Crit.Value P.Value Std.Estimate    
+  richness      temp  -0.0357    0.7765 533    -0.0459  0.9634      -0.0028    
+      NDVI  richness  -0.0002    0.0002 533    -1.6250  0.1047      -0.0301    
+      NDVI      temp  -0.0282    0.0033 533    -8.4356  0.0000      -0.2746 ***
+      NDVI       wet  -3.4060    0.1590 533   -21.4266  0.0000      -0.5636 ***
+
+  Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+
+---
+Individual R-squared:
+
+  Response method R.squared
+  richness   none      0.00
+      NDVI   none      0.65</code></pre>
+</div>
+</div>
+<p>Now the results show no significance in the richness model, and no significance for the path <code>richness</code> -&gt; <code>NDVI</code> (shown in the plot below as dashed lines). In the first model (above), both of these were found to be significant; accounting for the autocorrelation helps to removeor reduce the bias from this, and (in this case) shows that our assumed DAG is not supported by the data, and a simpler set of paths would be sufficient.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(boreal_psem2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/psem5.png" class="img-fluid figure-img"></p>
+<figcaption>PSEM model</figcaption>
+</figure>
+</div>
+</section>
+<section id="appendix-data-files" class="level1">
+<h1>Appendix: Data files</h1>
+<section id="grace-and-keeley-dataset-keeley.csv" class="level2">
+<h2 class="anchored" data-anchor-id="grace-and-keeley-dataset-keeley.csv">Grace and Keeley dataset <em>keeley.csv</em></h2>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column header</th>
+<th>Variable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>distance</td>
+<td>Distance to coast (m)</td>
+</tr>
+<tr class="even">
+<td>elev</td>
+<td>Elevation a.s.l.</td>
+</tr>
+<tr class="odd">
+<td>abiotic</td>
+<td>Abiotic favorability</td>
+</tr>
+<tr class="even">
+<td>age</td>
+<td>Age of stand before fire</td>
+</tr>
+<tr class="odd">
+<td>hetero</td>
+<td>Plot heterogeneity</td>
+</tr>
+<tr class="even">
+<td>firesev</td>
+<td>Severity of fire</td>
+</tr>
+<tr class="odd">
+<td>cover</td>
+<td>Cover of plants</td>
+</tr>
+<tr class="even">
+<td>rich</td>
+<td>Plant species richness</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="shipley-dataset-shipley.csv" class="level2">
+<h2 class="anchored" data-anchor-id="shipley-dataset-shipley.csv">Shipley dataset <em>shipley.csv</em></h2>
+<p>This is a synthetic dataset on tree growth and survival.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column header</th>
+<th>Variable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>site</td>
+<td>Site of observation</td>
+</tr>
+<tr class="even">
+<td>tree</td>
+<td>Tree ID</td>
+</tr>
+<tr class="odd">
+<td>lat</td>
+<td>Site latitude</td>
+</tr>
+<tr class="even">
+<td>year</td>
+<td>Year of observation</td>
+</tr>
+<tr class="odd">
+<td>Date</td>
+<td>Date of first bud burst</td>
+</tr>
+<tr class="even">
+<td>DD</td>
+<td>Cumulative degree days until first bud burst</td>
+</tr>
+<tr class="odd">
+<td>Growth</td>
+<td>Annual increase in stem diameter</td>
+</tr>
+<tr class="even">
+<td>Survival</td>
+<td>Proportional survival</td>
+</tr>
+<tr class="odd">
+<td>Live</td>
+<td>Alive (1) or dead (0)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="boreal-dataset-boreal.csv" class="level2">
+<h2 class="anchored" data-anchor-id="boreal-dataset-boreal.csv">Boreal dataset <em>boreal.csv</em></h2>
+<p>This dataset is taken from Alain Zuur’s book “Mixed Effects Models and Extensions in Ecology with R”</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column header</th>
+<th>Variable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>point</td>
+<td>Point ID</td>
+</tr>
+<tr class="even">
+<td>x</td>
+<td>Easting</td>
+</tr>
+<tr class="odd">
+<td>y</td>
+<td>Northing</td>
+</tr>
+<tr class="even">
+<td>richness</td>
+<td>Species richness</td>
+</tr>
+<tr class="odd">
+<td>NDVI</td>
+<td>NDVI</td>
+</tr>
+<tr class="even">
+<td>temp</td>
+<td>Soil temperature</td>
+</tr>
+<tr class="odd">
+<td>wet</td>
+<td>Moisture index</td>
+</tr>
+</tbody>
+</table>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

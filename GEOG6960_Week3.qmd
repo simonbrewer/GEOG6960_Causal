@@ -1,0 +1,615 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 3"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 440 5th Ave N
+        city: Salt Lake City
+        state: UT
+        postal-code: 98109-4631
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to explore what a randomized control trial (RCT) looks like, and the use of propensity score matching to *replicate* the type of randomization seen in RCTs.
+
+As a reminder, the goal of causal inference is to remove any bias related to the *treatment*: the covariate we are interested in. This is usually expressed as a *confounder* : one or more additional covariates ($X$) that affect both the treatment ($T$) and the outcome ($Y$). RCTs avoid this problem by trying to ensure that the assignation of $T$ is random relative to $X$. If this is true, then the causal effect (the thing we're actually interested in) can usually be estimated using simple statistics ($t$-tests, linear models).
+
+## Packages
+
+::: {.panel-tabset group="language"}
+# R
+
+We'll be using the following R packages, so make sure they are installed and then load them:
+
+```{r}
+#| output: false
+library(tidyverse)
+library(ggpubr)
+library(ggsci)
+library(sjPlot)
+```
+
+# Python
+
+We'll be using the following Python packages, so install these using your favorite package manage (pip, conda) and import them:
+
+```{python}
+import random
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+```
+:::
+
+## Interrupted Time Series
+
+Interrupted time series models assess the causal effect of an intervention or treatment by examining changes in the trend of an outcome ($Y$) before and after the start of the treatment. This is quite widely used in social and economic settings, where often only one set of data can be observed (e.g. tracking GDP before and after the implementation of a fiscal policy).
+
+The format for the ITS model is
+
+$$
+Y = \beta_0 + \beta_1 T + \beta_2 D + \beta_3 P
+$$
+
+Where:
+
+-   $Y$ is the outcome
+-   $T$ is time
+-   $D$ is a binary indicator (pre vs. post treatment)
+-   $P$ is a index of time since treatment
+
+### Simulated data
+
+First, we're going to create a synthetic dataset, which will include the impact of a treatment. The time series will include a base trend, which will then be modified after the start of the intervention.
+
+First, we'll set a random seed to make the results repeatable. As before, try changing this to see how the noise we will add changes the results.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+set.seed(42)
+```
+
+# Python
+
+```{python}
+np.random.seed(42)
+```
+:::
+
+Now we'll simulate the data. The data will represent student outcomes over a full year (365 days), and we'll use the following equation to represent the base trend ($Y$ is the outcome, $T$ is the time in days). This will give a starting value of 5.4 and an upward trend of 0.5 per day:
+
+$$
+Y = 5.4 + 0.5 \times T
+$$ To this we'll add the following effects: - An immediate effect of the policy change of +20 points - A change in the slope of +1.2
+
+To include these, we need to make the two vectors ($D$ and $P$). With this, the equation to generate the data is:
+
+$$
+Y = 5.4 + 0.5 \times T + 20 \times D + 1.2 \times P
+$$
+
+Finally, we'll add some noise to the trends to represent individual daily variation ($N(0, 50)$).
+
+::: {.panel-tabset group="language"}
+# R
+
+First generate the basic equation:
+
+```{r}
+T = rep(1:365)
+D = ifelse(T > 200, 1, 0)
+P = ifelse(T <= 200, 0, rep(1:200))
+
+Y = 5.4 + 0.5 * T + 20 * D + 1.2 * P
+```
+
+Now add errors and combine everything into a data frame:
+
+```{r}
+err = rnorm(365, 0, 50)
+Y = Y + err
+well_df <- as.data.frame(cbind(Y, T, D, P)) 
+```
+
+And finally plot it:
+
+```{r}
+ggplot(well_df, aes(x = T, y = Y)) + 
+geom_point(size = 3, alpha = 0.5) +
+geom_vline(xintercept = 201) +
+theme_bw() +
+theme(text = element_text(size = 16))
+```
+
+# Python
+
+First generate the basic equation:
+
+```{python}
+T = np.arange(365)
+D = np.where(T > 200, 1, 0)
+P = T - 200
+P = np.where(T <= 200, 0, P)
+
+Y = 5.4 + 0.5 * T + 20 * D + 1.2 * P
+```
+
+Now add errors and combine everything into a data frame:
+
+```{python}
+err = np.random.normal(0, 50, 365)
+Y = Y + err
+
+well_df = pd.DataFrame({'Y': Y,
+                        'T': T,
+                        'D': D,
+                        'P': P})
+```
+
+And finally plot it:
+
+```{python}
+sns.scatterplot(well_df,
+                x = "T",
+                y = "Y", 
+                alpha = 0.75)
+```
+:::
+
+### A simple model
+
+Before fitting the ITS model, we'll fit a simple trend model of the outcome over time. In this case, this we'll just use a simple OLS model.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+fit0 <- lm(Y ~ T, well_df)
+tab_model(fit0)
+```
+
+# Python
+
+```{python}
+mod = smf.ols(formula='Y ~ T', data=well_df)
+fit0 = mod.fit()
+print(fit0.summary())
+```
+:::
+
+Note that the slope we obtain here falls somewhere between the baseline trend (0.5) and the post-treatment trend (0.5 + 1.2), as we have not accounted for this effect as a separate term in the model.
+
+Now we'll fit the full ITS model. As a reminder, this extends the basic OLS model by including the two additional vectors described above.
+
+### ITS model
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+fit1 <- lm(Y ~ T + D + P, well_df)
+tab_model(fit1)
+```
+
+# Python
+
+```{python}
+mod = smf.ols(formula='Y ~ T + D + P', data=well_df)
+fit1 = mod.fit()
+print(fit1.summary())
+```
+:::
+
+The values we used when generating the data should now be a lot closer to the model coefficients (or at least within the confidence intervals).
+
+One of the advantages of fitting these models in standard statistical frameworks (like OLS) is that we can use other diagnostics tools. For example, we can use ANOVA to compare the two model, to see if the additional complexity of the ITS model is worthwhile:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+anova(fit0, fit1)
+```
+
+# Python
+
+```{python}
+sm.stats.anova_lm(fit0, fit1)
+```
+:::
+
+The low $p$-value indicates that the more complex ITS model provides a better fit.
+
+Let's now use this to visualize the model. First create a new data set to predict for, the plot the results:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+well_df$yhat <- predict(fit1)
+head(well_df)
+```
+
+```{r}
+ggplot(well_df, aes(x = T)) + 
+  geom_point(aes(y = Y), size = 3, alpha = 0.5) +
+  geom_line(data = well_df, aes(y = yhat), size = 2) +
+  theme_bw()
+```
+
+# Python
+
+```{python}
+well_df['yhat'] = fit1.predict()
+```
+
+```{python}
+fig, ax = plt.subplots()
+sns.scatterplot(well_df, x = "T", y = "Y", 
+                alpha = 0.75, ax=ax)
+plt.axvline(x=200)
+sns.lineplot(well_df, x = "T", y = "yhat",ax=ax,
+            color="darkorange", linewidth=5)
+```
+:::
+
+### Counterfactual
+
+We can use the coefficients from the ITS model to calculate the counterfactual for the post-treatment period. The estimation of this is simple - we just set the values of $D$ and $P$ to zero (rather than the value we set above). In the following code, we first extract the model coefficients, then use these to estimate the factual and counterfactual for 20 days post-treatment.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+b0 = coef(fit1)[1]
+b1 = coef(fit1)[2]
+b2 = coef(fit1)[3]
+b3 = coef(fit1)[4]
+```
+
+Factual:
+
+```{r}
+post_time <- 20
+b0 + b1 * (200 + post_time) + b2 + b3 * post_time
+```
+
+Counterfactual:
+
+```{r}
+b0 + b1 * (200 + post_time) 
+```
+
+# Python
+
+```{python}
+b0 = fit1.params['Intercept']
+b1 = fit1.params['T']
+b2 = fit1.params['D']
+b3 = fit1.params['P']
+```
+
+Factual:
+
+```{python}
+post_time = 20
+b0 + b1 * (200 + post_time) + b2 + b3 * post_time
+```
+
+Counterfactual:
+
+```{python}
+b0 + b1 * (200 + post_time)
+```
+:::
+
+Which should give you a difference of around +40 from the counterfactual. We can also predict these across a range of values, and compare with the factual values to show the effect over time. To do this we need to make a data frame that contains the values of the model variables (`T`, `D`, `P`) for both conditions. For the factual, we just use the values we created earlier. For the counterfactual, we repeat the time variable (`T`), but set both `D` and `P` to zero.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+pred_df <- data.frame(T = rep(T, 2),
+                      D = c(D, rep(0, length(P))),
+                      P = c(P, rep(0, length(P))))
+pred_df$yhat <- predict(fit1, newdata = pred_df)
+pred_df$D <- as.factor(pred_df$D)
+```
+
+```{r}
+ggplot(well_df, aes(x = T)) + 
+  geom_point(aes(y = Y), size = 3, alpha = 0.5) +
+  geom_line(data = pred_df, aes(y = yhat, col = D), size = 2) +
+  theme_bw() 
+```
+
+# Python
+
+```{python}
+T_pred = np.concatenate([T, T])
+D_pred = np.concatenate([D, np.repeat(0, len(D))])
+P_pred = np.concatenate([P, np.repeat(0, len(P))])
+pred_df = pd.DataFrame({'T': T_pred,
+                        'D': D_pred,
+                        'P': P_pred
+})
+```
+
+```{python}
+pred_df['yhat'] = fit1.predict(pred_df)
+```
+
+```{python}
+fig, ax = plt.subplots()
+sns.scatterplot(well_df, x = "T", y = "Y", 
+                alpha = 0.75, ax=ax)
+plt.axvline(x=200)
+sns.lineplot(pred_df, x = "T", y = "yhat", ax=ax, hue = "D",
+            linewidth=5)
+```
+:::
+
+## Difference-in-differences
+
+Difference-in-difference models are an alternative approach to testing causality with time series data. These improve on the ITS approach by testing for changes in time *and* comparing these to any change in a control time series.
+
+The base model for DID is:
+
+$$
+Y = \beta_0 + \beta_1 T + \beta_2 D + \beta_3 D\times T
+$$
+
+Where:
+
+-   $Y$ is the outcome
+-   $T$ is time
+-   $D$ is a binary indicator (control vs. treatment)
+-   $D \times T$ is the interaction between $T$ and $D$ and represents the quantity we're interested in (i.e. the change in slope in the treated group)
+
+### Simulated data
+
+As before, we'll start by creating a synthetic dataset. This will represent house prices for two locations. Unlike the previous example, where we had observations for multiple time steps, here we'll just have value pre (0) and post (1) treatment. The treatment here represents the installation of subsidized housing between the two time steps, and the outcome of interest is house prices.
+
+To start, we create two vectors of of 1000 binary values representing pre and post treatment (i.e. time) and control (0) or treated (1). We then estimate a house price for each of these using the following equation:
+
+$$
+Price = 50000 + 5000 \times Treat + 43000 \times Time + 
+10000 \times Treat \times Time
+$$
+
+This means that: - Prices for control houses before the treatment are \$50K - Prices for treated houses before the treatment are \$50K + \$5K = \$55K - Prices for control houses increase by \$43K after the treatment - Prices for treated houses increase by *an additional* \$10K after the treatment
+
+Finally, we'll add some noise to represent house-scale variability ($N(0, 10000)$).
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+Time = rep(c(0,1), 500)
+
+Treat = rep(c(0,0,1,1), 250)
+
+y = 50000 + 5000 * Treat + 43000 * Time + 
+  10000 * Treat * Time
+
+e = rnorm(1000, 0, 10000)
+y = y + e
+```
+
+Add to data frame
+
+```{r}
+house_df = data.frame(Price = y,
+  Treat = as.factor(Treat),
+  Time = as.factor(Time))
+```
+
+And plot:
+
+```{r}
+ggline(house_df, x = "Time", y = "Price",
+       add = c("mean_se", "jitter"), 
+       color = "Treat", palette = "jco") 
+```
+
+# Python
+
+```{python}
+Time = np.resize([0,1], 1000)
+Treat = np.resize([0,0,1,1], 1000)
+
+y = 50000 + 5000 * Treat + 43000 * Time + 10000 * Treat * Time
+
+e = np.random.normal(0, 10000, 1000)
+y = y + e
+```
+
+Add to data frame
+
+```{python}
+house_df = pd.DataFrame({'Price': y,
+                         'Treat': Treat,
+                         'Time': Time
+                         })
+```
+
+And plot:
+
+```{python}
+fig, ax = plt.subplots()
+sns.stripplot(house_df, x = 'Time', y = 'Price', hue = 'Treat', alpha = 0.25)
+sns.pointplot(house_df, x = 'Time', y = 'Price', hue = 'Treat')
+```
+:::
+
+### A simple model
+
+As before, we'll start with simple OLS model, with the prices as a function of treatment and time. We'll exclude the DID effect here, which makes the model:
+
+$$
+Y = \beta_0 + \beta_1 T + \beta_2 D
+$$
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+fit0 <- lm(Price ~ Time + Treat, house_df)
+tab_model(fit0)
+```
+
+# Python
+
+```{python}
+mod = smf.ols(formula='Price ~ Time + Treat', data=house_df)
+fit0 = mod.fit()
+print(fit0.summary())
+```
+:::
+
+We get a pretty good model, but note that neither of the coefficients match the expected values from our simulated data (e.g. the effect of time is much larger than the base effect). Again (and I'm sure you've already understood this), this is because the model is merging the effects of time for the two groups together.
+
+### DID model
+
+Let's now fit the DID model to see if we get the expected coefficients. To do this, we simply need to add the interaction between `Time` and `Treat` to the model:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+fit1 <- lm(Price ~ Time * Treat, house_df)
+tab_model(fit1)
+```
+
+# Python
+
+```{python}
+mod = smf.ols(formula='Price ~ Time + Treat + Time:Treat', data=house_df)
+fit1 = mod.fit()
+print(fit1.summary())
+```
+:::
+
+And the results should be a much better match, with the model coefficients comparable to the values with used in creating the data. **NB:** of all the results here, the most important is the coefficient on the `Time:Treat` interaction. This is the *casual* effect in this model: the impact on house prices due to the addition of subsidized housing.
+
+As in the previous section, we can also compare the two models with ANOVA, to see if including the DID term is helpful
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+anova(fit0, fit1)
+```
+
+# Python
+
+```{python}
+sm.stats.anova_lm(fit0, fit1)
+```
+:::
+
+And again, the low $p$-value indicates that the DID model provides a better fit.
+
+### Counterfactual
+
+Estimating the counterfactual is pretty straightforward. Here, it is the expected value of the treatment group *without* the DID effect, or in this case, the intercept plus the time effect plus the treatment effect.
+
+We'll now extract this, plus the estimate of the factual and the control group for plotting. As we only have two values for `Time` (`[0,1]`), we can simply work by adding together the model coefficients from the full DID model:
+
+$$
+Y = \beta_0 + \beta_1 T + \beta_2 D + \beta_3 D\times T
+$$
+
+-   Control at time 0: $\beta_0$
+-   Control at time 1: $\beta_0 + \beta_1$
+-   Treatment at time 0: $\beta_0 + \beta_2$
+-   Treatment at time 1 (factual): $\beta_0 + \beta_2 + \beta_1 + \beta_3$
+-   Treatment at time 1 (counterfactual): $\beta_0 + \beta_2 + \beta_1$
+
+::: {.panel-tabset group="language"}
+# R
+
+First extract the model coefficients:
+
+```{r}
+did_coefs = coef(fit1)
+did_coefs
+```
+
+Now, we'll make up vectors of estimates for the control, treatment, and the treatment with the counterfactual estimate at time = 1:
+
+```{r}
+yhat_control = c(did_coefs[1], did_coefs[1] + did_coefs[2])
+yhat_treatment = c(did_coefs[1] + did_coefs[3], 
+                   did_coefs[1] + did_coefs[3] + did_coefs[2] + did_coefs[4])
+yhat_cf = c(did_coefs[1] + did_coefs[3], 
+            did_coefs[1] + did_coefs[3] + did_coefs[2])
+```
+
+Create a data frame:
+
+```{r}
+plot_df = data.frame(Label = factor(rep(c("Control", "Treat", "CF"), each = 2), 
+                                    levels = c("Control", "Treat", "CF")),
+                     Time = rep(c(0,1), 3),
+                     yhat = c(yhat_control, yhat_treatment, yhat_cf))
+```
+
+And now plot:
+
+```{r}
+ggplot(plot_df, aes(x = Time, y = yhat, col = Label)) +
+  geom_line(size = 2) +
+  scale_color_jco() +
+  theme_bw() +
+  theme(text = element_text(size = 16))
+```
+
+# Python
+
+```{python}
+did_coefs = fit1.params.tolist()
+did_coefs
+```
+
+```{python}
+yhat_control = [did_coefs[0], did_coefs[0] + did_coefs[1]]
+yhat_treatment = [did_coefs[0] + did_coefs[2], 
+                   did_coefs[0] + did_coefs[2] + did_coefs[1] + did_coefs[3]]
+yhat_cf = [did_coefs[0] + did_coefs[2], 
+            did_coefs[0] + did_coefs[2] + did_coefs[1]]
+```
+
+```{python}
+pred_df = pd.DataFrame({'Label': np.repeat(["Control", "Treat", "CF"], 2),
+                        'Time': np.resize([0,1], 6),
+                        'yhat': np.concatenate([yhat_control, yhat_treatment, yhat_cf])
+                         })
+```
+
+```{python}
+sns.lineplot(pred_df, x = "Time", y = "yhat", hue = "Label")
+```
+:::
+
+The DID effect can be seen here clearly as the difference in the treatment and CF estimates at time = 1.

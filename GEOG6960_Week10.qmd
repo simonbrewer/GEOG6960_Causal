@@ -1,0 +1,1007 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 10"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 260 Central Campus Drive
+        city: Salt Lake City
+        state: UT
+        postal-code: 84112
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to take a quick look at working with Bayesian networks. These are probabilistic graph models, that overlap with path models and structural equation models. The main difference is that these are based on Bayesian theory, which makes it possible to include prior information and provides probabilistic estimates that can help understand the uncertainty in a model. Note that these are not uniquely causal models - these can be used simply to model the relationships between a set of observations. However, in the absence of confounders (i.e. all known ones are accounted for), then these can be used for causal analysis.
+
+Bayesian networks are developed in two steps: structure learning and parameter learning. Both of these can incorporate expert knowledge, and we'll see examples of this below.
+
+We'll use two datasets:
+
+-   Travel survey data
+-   Keeley and Grace fire data set (*keeley.csv*)
+
+## Bayesian networks
+
+Both R and Python have several packages that allow you to create SEMs and estimate coefficients based on a dataset. We'll use **bnlearn** for R and **pgmpy** for Python here. Other packages include:
+
+-   R: **BayesianNetwork** and **gRain**
+-   Python: **PyMC3**, **bnlearn** and **PyBN**
+
+First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+#| output: false
+library(tidyverse)
+library(GGally)
+library(bnlearn)
+library(gRain)
+```
+
+# Python
+
+```{python}
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from IPython.display import Image
+```
+:::
+
+## Discrete Bayesian Networks
+
+We'll start with an example of a discrete Bayesian Network. In these networks, all variables are multinomial (i.e. binary or multi-category). This facilitates the analysis as all probability distributions can be described as simple conditional probability tables (more on this below).
+
+### Data
+
+Let's now load the data. The dataset we'll use represents information from a travel survey. This includes the following variables (listed with their categories):
+
+-   Age (`A`): adult/young/old
+-   Size of employment region (`R`): big/small
+-   Education (`E`): high/uni
+-   Occupation (`O`): emp/self
+-   Sex (`S`): F/M
+-   Travel mode (`T`): car/train/other
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travel <- read.table("./data/survey.txt", header = TRUE)
+head(travel)
+```
+
+```{r}
+travel <- travel %>%
+  mutate_if(is_character, ~as.factor(.x))
+```
+
+# Python
+
+```{python}
+travel = pd.read_csv("./data/survey.txt", 
+                      delimiter=' ', header=0)
+travel.head()
+```
+:::
+
+The nodes are assumed to connect following the DAG below. In this, there are the following paths:
+
+- Path from age to education (younger people more likely to have higher ed level)
+- Path from age to education (women more likely to have higher ed level)
+- Path from education to occupation 
+- Path from education to residence (size of city; high ed -> bigger cities)
+- Path from occupation type to travel mode
+- Path from residence to travel mode
+
+```{r message=FALSE, echo=FALSE}
+library(ggdag)
+
+travel_dag <- dagify(E ~ A + S,
+                     O ~ E,
+                     R ~ E,
+                     T ~ O + R,
+                     coords = list(x = c(A = 1,
+                                         S = 1,
+                                         E = 2,
+                                         O = 3,
+                                         R = 3,
+                                         T = 4), 
+                                   y = c(A = 1,
+                                         S = 3,
+                                         E = 2,
+                                         O = 1,
+                                         R = 3,
+                                         T = 2)
+                     ),
+                     labels = c(A = "Age",
+                                S = "Sex",
+                                E = "Education",
+                                O = "Occupation",
+                                R = "Residence",
+                                T = "Travel")
+)
+ggdag(travel_dag, use_labels = "label", text = FALSE) +
+  theme_dag()
+
+```
+
+### Example 1
+
+In this first example, we'll build both the structure and parameters of the model using expert knowledge.
+
+#### Structure learning
+
+::: {.panel-tabset group="language"}
+# R
+
+**bnlearn** has a couple of different ways to specify network structures. The one we'll use here allows you to create both the nodes (variables) and the links (paths) in one go. The function is `model2network`. Each variable is specified in `[ ]`, together with any other variables that it depends on. So `[C|A:B]` indicates a node `C` which has paths coming in from nodes ``A` and `B`. (Note that the node names need to match the column headers of any data we want to use.) The following code specifies the DAG shown above:
+
+```{r}
+dag <- model2network("[A][S][E|A:S][O|E][R|E][T|O:R]")
+dag
+```
+```{r}
+amat(dag)
+```
+
+# Python
+
+In Python's **pgmpy** package, the network is built by specifying all the paths as a set of origin/destination tuples. Note that the node names need to match the column headers of any data we want to use. The following code specifies the DAG shown above:
+
+```{python}
+from pgmpy.models import BayesianNetwork
+travel_model = BayesianNetwork(
+    [
+        ('A', 'E'),  
+        ('S', 'E'), 
+        ('E', 'O'), 
+        ('E', 'R'), 
+        ('O', 'T'), 
+        ('R', 'T')  
+    ]
+)
+travel_model
+```
+**pgmpy** doesn't return the adjacency matrix directly, but you can access it through **networkx**:
+
+```{python}
+import networkx as nx
+G = nx.DiGraph(travel_model.edges())
+print(nx.to_numpy_array(G))
+```
+
+:::
+
+In the network description, there are 6 paths described (all directed). The adjacency matrix shows these; each row is an origin node and each column a destination. A `1` represents a path from that origin to destination. We can visualize the structure as well: 
+
+::: {.panel-tabset group="language"}
+# R
+
+**bnlearn** has a native plotting function, but usually a better plot can be obtained by using **graphviz** (you will probably need to install this separately).
+
+```{r}
+# plot(dag)
+graphviz.plot(dag)
+```
+
+# Python
+
+```{python}
+viz = travel_model.to_graphviz()
+viz.draw('travel.png', prog='neato')
+Image('travel.png')
+```
+:::
+
+#### Parameter learning
+
+In a discrete Bayesian network, the parameters are the conditional probabilities for each variable, and can be set using conditional probability tables (cpds). For an exogenous variable (one with no paths coming in), this simply represents the probability of each class. So if in our example, we expected 30% young respondents, 50% adult and 20% old, the cpd for age would be:
+
+| `young` | `adult` | `old` |
+|---------------|-----------------|--------------------------|
+| 0.3        | 0.5  | 0.2 |
+
+For endogenous variables (one with at least one path coming in) this becomes more difficult, as we need to specify the pairwise probabilities for each category of the variable of interest conditioned on each category of the parent variable. For example, occupation (`O`) is dependent on the level of education (`E`), so we might assign the following probabilities: `emp` and `high`: 96%; `emp` and `uni`: 92%; `self` and `high`: 4%; `self` and `uni`: 8%. Note the probabilites for each level of the variable of interest (`O`) have to sum to 1 (or 100%). The cpd might look something like this:
+
+|| `emp` | `self` |
+|---------------|-----------------|--------------------------|
+|`high` | 0.96 | 0.92 |
+|`uni`  | 0.04 | 0.08 |
+
+For variables with two incoming paths (`E` and `T`), this becomes even more complicated as we now need the conditional probability for each combination of categories (i.e. each of `E`, `A` and `S`). As you might imagine, this becomes non-trivial for large and complex networks, where learning from data provides an easier way forward. 
+
+Let's now make the cpds. Generally, this requires the tables to be first defined then linked to the DAG created above. 
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, we first defined the *levels*, the categories of each variable:
+
+```{r}
+A_lv <- c("young", "adult", "old")
+S_lv <- c("M", "F")
+E_lv <- c("high", "uni")
+O_lv <- c("emp", "self")
+R_lv <- c("small", "big")
+T_lv <- c("car", "train", "other")
+```
+
+Next, we define the cpds. We'll start with the two exogenous variables (`A` and `S`). Each of these is simply a 1D vector of probabilities that should sum to 1. The vector for `A` needs three entries as there are three levels. Note that the *dimnames* are set using the levels created above (this allows the model to find the correct probability). 
+
+```{r}
+## ----cpds-A-S-----------------------------------------------------------------
+A_cpd <- array(c(0.30, 0.50, 0.20), dim = 3, dimnames = list(A = A_lv))
+A_cpd
+S_cpd <- array(c(0.60, 0.40), dim = 2, dimnames = list(S = S_lv))
+S_cpd
+```
+
+Next we'll do the variables with one incoming path (`O` and `R`). These need a 2D array of probabilities:
+
+```{r}
+## ----cpds-O-R-----------------------------------------------------------------
+O_cpd <- array(c(0.96, 0.04, 
+                  0.92, 0.08), dim = c(2, 2),
+            dimnames = list(O = O_lv, E = E_lv))
+O_cpd
+R_cpd <- array(c(0.25, 0.75, 
+                  0.20, 0.80), dim = c(2, 2),
+            dimnames = list(R = R_lv, E = E_lv))
+R_cpd
+```
+
+And finally, the two variables with 2 incoming paths. These need a 3D array (one dimension per variable). Note that the dimension definitions start to become more important here. For `E`, we have `A` and `S`, which have 3 and 2 levels respectively, and `E` has 2. The order we have chose here (`E`, `A`, `S`) needs an array with the following dimensions `[2,3,2]`. 
+
+For the second (`T`, 3 levels), we have `O` and `R`, which both have 2 levels. The array dimension are then `[3,2,2]`. 
+
+
+```{r}
+## ----cpds-E-T-----------------------------------------------------------------
+E_cpd <- array(c(0.75, 0.25, 0.72, 0.28, 0.88, 0.12, 0.64, 0.36, 0.70,
+                  0.30, 0.90, 0.10), dim = c(2, 3, 2),
+            dimnames = list(E = E_lv, A = A_lv, S = S_lv))
+E_cpd
+
+T_cpd <- array(c(0.48, 0.42, 0.10, 0.56, 0.36, 0.08, 0.58, 0.24, 0.18,
+                  0.70, 0.21, 0.09), dim = c(3, 2, 2),
+            dimnames = list(T = T_lv, O = O_lv, R = R_lv))
+T_cpd
+```
+
+# Python
+
+In Python, we can create these tables using **pgmpy**'s function `TabularCPD`. 
+
+```{python}
+from pgmpy.factors.discrete import TabularCPD
+```
+
+We'll start with the two exogenous variables (`A` and `S`). Each of these is simply a 1D vector of probabilities that should sum to 1. The vector for `A` needs three entries as there are three levels. Note that the *state_names* are set using the levels created above (this allows the model to find the correct probability). 
+
+```{python}
+# Age
+cpd_A = TabularCPD(variable='A', 
+                    variable_card=3, 
+                    values=[[0.3], [0.5], [0.2]],
+                    state_names={'A': ['young', 'adult', 'old']})
+print(cpd_A)
+```
+
+```{python}
+# Sex
+cpd_S = TabularCPD(variable='S', 
+                    variable_card=2, 
+                    values=[[0.6], [0.4]],
+                    state_names={'S': ['M', 'F']})
+print(cpd_S)
+```
+
+Next we'll do the variables with one incoming path (`O` and `R`). These need a 2D array of probabilities (the columns represent the probability for one level of the destination node (e.g. `O`) and so should sum to 1. We specify the variables that are used as input as `evidence`, and need to specify the number of levels of these (`evidence_card`).
+
+```{python}
+# Occupation
+cpd_O = TabularCPD(variable='O', variable_card=2,
+                   values=[[0.96, 0.92],
+                           [0.04, 0.08]],
+                           evidence=['E'], evidence_card=[2],
+                           state_names={'O': ['emp', 'self'],
+                                        'E': ['high', 'uni']})
+print(cpd_O)
+```
+
+```{python}
+# Sex
+# Residence
+cpd_R = TabularCPD(variable='R', variable_card=2,
+                   values=[[0.25, 0.20],
+                           [0.75, 0.80]],
+                           evidence=['E'], evidence_card=[2],
+                           state_names={'R': ['small', 'big'],
+                                        'E': ['high', 'uni']})
+print(cpd_R)
+```
+
+And finally, the two variables with 2 incoming paths. Again, we use a 2D array to represent these, where each row represents one level of the destination node (e.g. `E`) and each column represents one pair of levels of the input nodes (e.g. `A` and `S`). We now have two variables for `evidence`, and we need to update the `evidence_card` to reflect this (`A` has 3 levels and `S` has 2). 
+
+For the second (`T`, 3 levels), we have `O` and `R` as `evidence`, which both have 2 levels. The `evidence_card` dimension are then `[2,2]`. 
+
+```{python}
+# Education
+cpd_E = TabularCPD(variable='E', variable_card=2,
+                   values=[[0.75, 0.64, 0.72, 0.70, 0.88, 0.90],
+                           [0.25, 0.36, 0.28, 0.30, 0.12, 0.10]],
+                           evidence=['A', 'S'],
+                           evidence_card=[3, 2],
+                           state_names={'E': ['high', 'uni'],
+                                        'A': ['young', 'adult', 'old'],
+                                        'S': ['M', 'F']})
+print(cpd_E)
+```
+
+```{python}
+# Travel
+cpd_T = TabularCPD(variable='T', variable_card=3,
+                   values=[[0.48, 0.58, 0.56, 0.70],
+                           [0.42, 0.24, 0.36, 0.21],
+                           [0.10, 0.18, 0.08, 0.09]],
+                           evidence=['O', 'R'],
+                           evidence_card=[2, 2],
+                           state_names={'T': ['car', 'train', 'other'],
+                                        'O': ['emp', 'self'],
+                                        'R': ['small', 'big']})
+print(cpd_T)
+```
+:::
+
+With these set, we can now link them to the network. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+cpd <- list(A = A_cpd, S = S_cpd, 
+            E = E_cpd, O = O_cpd, 
+            R = R_cpd, T = T_cpd)
+bn <- custom.fit(dag, cpd)
+```
+
+You can print any of these from the fitted network as follows:
+
+```{r}
+bn$T
+```
+
+# Python
+
+```{python}
+travel_model.add_cpds(cpd_A, cpd_S, cpd_E, cpd_O, cpd_R, cpd_T)
+```
+:::
+
+You can print any of these from the fitted network as follows:
+
+```{python}
+print(travel_model.get_cpds("T"))
+```
+
+### Example 2
+
+For the second example, we'll use the network structure that we created from expert knowledge in the first example, but we'll learn the parameters using the travel survey dataset:
+
+#### Structure learning
+
+We'll recreate the empty DAG first (note that we could simply update the parameters from the original if we wanted). 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+dag <- model2network("[A][S][E|A:S][O|E][R|E][T|O:R]")
+```
+
+# Python
+
+```{python}
+travel_model = BayesianNetwork(
+    [
+        ('A', 'E'),  
+        ('S', 'E'), 
+        ('E', 'O'), 
+        ('E', 'R'), 
+        ('O', 'T'), 
+        ('R', 'T')  
+    ]
+)
+```
+:::
+
+#### Parameter learning
+
+Let's now learn the parameters. We'll use a Maximum Likelihood estimator, but there are other options (e.g. Expectation Maximization):
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+bn.mle <- bn.fit(dag, data = travel, method = "mle")
+```
+
+# Python
+
+```{python}
+from pgmpy.estimators import MaximumLikelihoodEstimator
+```
+
+```{python}
+travel_model.fit(travel, MaximumLikelihoodEstimator)
+```
+:::
+
+You can check that the values match those in the file
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, the combination of `table` and `prop.table` can be used to show probabilities. Here's the values from the original dataframe for `A`:
+
+```{r}
+prop.table(table(travel[, c("A")]))
+```
+
+And here's the estimates from the model fit:
+
+```{r}
+bn.mle$A
+```
+
+Similarly, here are the original probabilities for `O`, conditioned on `E`:
+
+```{r}
+prop.table(table(travel[, c("O", "E")]), margin = 2)
+```
+
+And here are the model estimates:
+
+```{r}
+bn.mle$O
+```
+
+
+# Python
+
+In Python, we can use pandas' `value_counts()` function to get the original probabilities:
+
+```{python}
+travel['A'].value_counts(normalize=True)
+```
+
+And here's the estimates from the model fit:
+
+```{python}
+print(travel_model.get_cpds('A'))
+```
+
+Similarly, here are the original probabilities for `O`, conditioned on `E`:
+
+```{python}
+pd.crosstab(travel['O'], travel['E'], normalize='columns')
+```
+
+And here are the model estimates:
+
+```{python}
+print(travel_model.get_cpds('O'))
+```
+
+:::
+
+### Example 3
+
+For the third example, we'll look at how to learn the network structure from the dataset. 
+
+#### Structure learning
+
+There are a large number of structure learning algorithms. Here, we'll just demonstrate the HillClimb (a form of greedy search) and the Peters-Clark algorithm. If you are interested in using these with your own data, I'd strongly recommend reading the documents for other options.
+
+::: {.panel-tabset group="language"}
+# R
+
+- Hill Climb 
+
+```{r}
+travel_hc <- hc(travel)
+modelstring(travel_hc)
+```
+
+```{r}
+graphviz.plot(travel_hc)
+```
+
+- Peters-Clark
+
+```{r}
+travel_pc <- pc.stable(travel)
+# modelstring(travel_pc)
+```
+
+```{r}
+graphviz.plot(travel_pc)
+```
+
+# Python
+
+```{python}
+from pgmpy.estimators import PC, HillClimbSearch
+```
+
+- Hill Climb 
+
+```{python}
+est = HillClimbSearch(data=travel)
+travel_hc = est.estimate()
+```
+
+```{python}
+viz = travel_hc.to_graphviz()
+viz.draw('travel_hc.png', prog='neato')
+Image('travel_hc.png')
+```
+
+- Peters-Clark
+
+```{python}
+est = PC(data=travel)
+travel_pc = est.estimate()
+```
+
+```{python}
+viz = travel_pc.to_graphviz()
+viz.draw('travel_pc.png', prog='neato')
+Image('travel_pc.png')
+```
+
+:::
+
+The learned structure is quite a way from our original DAG, but provides a first estimate of the structure that can be subsequently modified. 
+
+### Inference with Bayesian networks
+
+Once the model is set up (i.e. structure and parameter learning has been run), we can use it to ask questions. This can be done with exact or approximate inference. For this model, which is relatively simple, we'll use the exact approach. 
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, the model can be queried by first converting it to a junction tree (this allows quick queries across the graph structure):
+
+```{r}
+junction <- compile(as.grain(bn.mle))
+```
+
+Now we can query it using `querygrain`. For example, to know the probabilities of different travel modes, we simply ask it to return a single node (this is $P(T)$):
+
+```{r}
+querygrain(junction, nodes = "T")$T
+```
+
+More usefully, we can query the model with *evidence*. This simply means setting some of the nodes to fixed values. To do this, we first adjust the junction with the evidence, then query it. So to see the travel probabilities for female participants (this is $P(T|S)$:
+
+```{r}
+jquery <- setEvidence(junction, nodes = "S", states = "F")
+querygrain(jquery, nodes = "T")$T
+```
+
+There's no great difference in the results, suggesting that there is little difference between female and male participants in travel mode choice. 
+
+Another question is whether living in small or big towns affects travel choice ($P(T|R)$):
+
+```{r}
+jquery <- setEvidence(junction, nodes = "R", states = "small")
+querygrain(jquery, nodes = "T")$T
+```
+
+You can also combine multiple lines of evidence in the query. We can, for example, query the travel models for older participants in big towns:
+
+```{r}
+jquery <- setEvidence(junction, nodes = c("R", "A"), 
+                      states = c("big", "old"))
+querygrain(jquery, nodes = "T")$T
+```
+
+You can also query multiple nodes. For example, to see the probability relating to car drivers (`S` and `E`):
+
+```{r}
+jquery <- setEvidence(junction, nodes = c("T"), 
+                      states = c("car"))
+querygrain(jquery, nodes = c("S", "E"))
+```
+
+This returns the marginal probability (i.e. the independent probabilities). You can also get the conditional probabilities as follows. In this case, this shows the probability of a car driver being male or female *conditioned* on their education level. 
+
+```{r}
+querygrain(jquery, nodes = c("S", "E"),
+           type = "conditional")
+```
+
+# Python
+
+In Python, the model can be queried using a couple of different approaches. Here, we'll use variable elimination, a simple method where and node that is conditionally independent is removed from the query before running it. First we need to instantiate an inference model using `VariableElimination`:
+
+```{python}
+from pgmpy.inference import VariableElimination
+travel_infer = VariableElimination(travel_model)
+```
+
+Now we can query it using `query`. For example, to know the probabilities of different travel modes, we simply ask it to return a single node (this is $P(T)$):
+
+```{python}
+q = travel_infer.query(variables=["T"])
+print(q)
+```
+
+More usefully, we can query the model with *evidence*. This simply means setting some of the nodes to fixed values. To do this, we first adjust the junction with the evidence, then query it. So to see the travel probabilities for female participants (this is $P(T|S)$:
+
+```{python}
+q = travel_infer.query(variables=["T"], evidence={"S": "F"})
+print(q)
+```
+
+There's no great difference in the results, suggesting that there is little difference between female and male participants in travel mode choice. 
+
+Another question is whether living in small or big towns affects travel choice ($P(T|R)$):
+
+```{python}
+q = travel_infer.query(variables=["T"], evidence={"R": "small"})
+print(q)
+```
+
+You can also combine multiple lines of evidence in the query. We can, for example, query the travel models for older participants in big towns:
+
+```{python}
+q = travel_infer.query(variables=["T"], 
+                       evidence={"R": "big", "A": "old"})
+print(q)
+```
+
+You can also query multiple nodes. For example, to see the probability relating to car drivers (`S` and `E`):
+
+```{python}
+q = travel_infer.query(variables=["S", "E"], 
+                       evidence={"T": "car"},
+                       joint=False)
+print(q['S'])
+print(q['E'])
+```
+
+This returns the marginal probability (i.e. the independent probabilities). You can also get the conditional probabilities as follows. In this case, this shows the probability of a car driver being male or female *conditioned* on their education level. 
+
+```{python}
+q = travel_infer.query(variables=["S", "E"], 
+                       evidence={"T": "car"},
+                       joint=True)
+print(q)
+```
+
+:::
+
+## Gaussian Bayesian networks
+
+We'll next look at working with continuous data in a Gaussian Bayesian network. Here's we'll use the published DAG to create our network, but learn the parameters from the data. Start by loading this:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley <- read.csv("./data/keeley.csv")
+head(keeley)
+```
+
+We'll drop the `elev` value as we won't be using it, and convert all the values to numeric (they are read in as integers)
+
+```{r}
+keeley <- keeley %>%
+  select(-elev) %>%
+  mutate_if(is_integer, ~as.numeric(.x))
+```
+
+# Python
+
+```{python}
+keeley = pd.read_csv("./data/keeley.csv")
+keeley.head()
+```
+
+We'll drop the `elev` value as we won't be using it
+
+```{python}
+keeley.drop('elev', axis=1, inplace=True)
+```
+
+:::
+
+### Structure learning
+
+We'll build the network manually again.
+
+::: {.panel-tabset group="language"}
+# R
+
+In R, we'll do this in two steps to make this a bit more interpretable. We first create an empty graph, where we specify the nodes (note that the names need to correspond to the column names in the data frame for parameter learning)
+
+```{r}
+dag <- empty.graph(nodes = c("distance", "abiotic", "hetero", "age",
+                             "firesev", "cover", "rich"))
+dag
+```
+
+We can now start adding paths one at a time using `set.arc`. This takes as arguments: the original DAG, and the origin and destination nodes.
+
+```{r}
+dag <- set.arc(dag, from = "distance", to = "abiotic")
+dag <- set.arc(dag, from = "distance", to = "hetero")
+dag <- set.arc(dag, from = "distance", to = "age")
+dag <- set.arc(dag, from = "age", to = "firesev")
+dag <- set.arc(dag, from = "firesev", to = "cover")
+dag <- set.arc(dag, from = "cover", to = "rich")
+dag <- set.arc(dag, from = "abiotic", to = "rich")
+dag <- set.arc(dag, from = "hetero", to = "rich")
+```
+
+And plot:
+
+```{r}
+graphviz.plot(dag)
+```
+
+
+# Python
+
+```{python}
+from pgmpy.models import LinearGaussianBayesianNetwork
+keeley_model = LinearGaussianBayesianNetwork(
+    [
+        ('distance', 'abiotic'),  
+        ('distance', 'hetero'), 
+        ('distance', 'hetero'), 
+        ('age', 'firesev'), 
+        ('firesev', 'cover'), 
+        ('cover', 'rich'), 
+        ('abiotic', 'rich'), 
+        ('hetero', 'rich') 
+    ]
+)
+keeley_model
+```
+
+```{python}
+viz = keeley_model.to_graphviz()
+viz.draw('keeley.png', prog='dot')
+Image('keeley.png')
+```
+
+:::
+
+
+### Parameter learning
+
+Now we can learn the network parameters from the `keeley` dataframe:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_bn <- bn.fit(dag, data = keeley)
+```
+
+
+# Python
+
+```{python}
+keeley_model.fit(keeley)
+```
+:::
+
+Unlike the discrete network above, these networks assume that all variables are Gaussian, so can be estimated as a mean and variance. For exogenous variables, we only have these parameters:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_bn$distance
+```
+
+```{r}
+lm(distance ~ 1, data = keeley)
+```
+
+
+# Python
+
+```{python}
+print(keeley_model.get_cpds('distance'))
+```
+
+```{python}
+mod = smf.ols(formula='distance ~ 1', data=keeley)
+fit_D = mod.fit()
+print(fit_D.params)
+```
+:::
+
+For any endogenous variable, the mean is conditioned on the parent nodes or variables. This simply equates to a linear model of the mean based on the parents. For example, the richness variable (`rich`) is conditioned on `abiotic`, `hetero` and `cover` (see paths above) giving:
+
+$$
+\mbox{rich} = \beta_0 + \beta_a \mbox{abiotic} + \beta_h \mbox{hetero}+ \beta_c \mbox{cover} + e; e \sim N(0, \sigma^2)
+$$
+To check this compare the results of the network model:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+keeley_bn$rich
+```
+
+With a simple linear model:
+
+```{r}
+lm(rich ~ abiotic + hetero + cover, data = keeley)
+```
+
+# Python
+
+```{python}
+print(keeley_model.get_cpds('rich'))
+```
+
+```{python}
+mod = smf.ols(formula='rich ~ abiotic + hetero + cover', data=keeley)
+fit_D = mod.fit()
+print(fit_D.params)
+```
+:::
+
+### Inference
+
+::: {.panel-tabset group="language"}
+# R
+
+As this network is a little more complex, we'll use approximate inference methods. These are based on random samples from the probability distributions underlying the model, and so your results may differ a little from those shown here. 
+
+As a first example, we'll create some random samples of richness from the model, but with conditions: age of the vegetation is 60 and abiotic factors are 50:
+
+```{r}
+sim_data = cpdist(keeley_bn, nodes = "rich",
+                  evidence = list(age = 60, abiotic = 50), 
+                  method = "lw")
+head(sim_data)
+```
+
+```{r}
+ggplot(sim_data, aes(x = rich)) +
+  geom_histogram() +
+  theme_bw()
+```
+
+As before, you can both query multiple nodes and use multiple conditions:
+
+```{r}
+sim_data <- cpdist(keeley_bn, 
+                   nodes = c("rich", "firesev", "cover"), 
+                   evidence = (age > 60 & abiotic > 50))
+head(sim_data)
+```
+
+And you can also query probabilities. For example, to find the probability that fire severity is above 6 for a location where the vegetation is 60 years old, abiotic factors are 30 and cover is equal to 0.5:
+
+```{r}
+cpquery(keeley_bn, event = (firesev > 6),
+        evidence = list(age = 60, abiotic = 30, cover = 0.5),
+        method = "lw")
+```
+
+# Python
+
+Currently, the **pgmpy** does not run inference on Linear Gaussian networks. So instead, we'll use a second package to do this (**lgnpy**). You'll need to install this (`pip install lgnpy`). You may also need to fix an error in one of the files. Find the file `LinearGaussian.py` in the **lgnpy** library, go to line 106, and replace `pd.np.nan` with `np.nan`. Now let's load it and build the model:
+
+```{python}
+from lgnpy import LinearGaussian
+
+lg = LinearGaussian()
+
+lg.set_edges_from([
+        ('distance', 'abiotic'),  
+        ('distance', 'hetero'), 
+        ('distance', 'age'), 
+        ('age', 'firesev'), 
+        ('firesev', 'cover'), 
+        ('cover', 'rich'), 
+        ('abiotic', 'rich'), 
+        ('hetero', 'rich') 
+    ]
+    )
+```
+
+Next, estimate the model parameters:
+
+```{python}
+lg.set_data(keeley)
+lg.network_summary()
+```
+
+Now we can run inference on the model. First run the inference with no constraints. This will print the expected mean and variance for all variables in the model. Note that the `Mean` and `Mean_inferred` columns are the same, as there are no conditioning variables. 
+
+```{python}
+lg.run_inference(debug=False)
+```
+
+Let's re-run this, but set the `evidence` to condition on stands that are 50 years old. We'll just examine the inferred effect on fire severity, which shows a roughly 30% increase
+
+```{python}
+lg.set_evidences({'age':50})
+lg.run_inference(debug=False).loc['firesev']
+```
+
+Now let's compare this to a younger stand (which gives about a 14% decrease):
+
+```{python}
+lg.set_evidences({'age':15})
+lg.run_inference(debug=False).loc['firesev']
+```
+
+As before, you can condition on multiple variables:
+
+```{python}
+lg.clear_evidences()
+lg.set_evidences({'age':50, 'distance':10})
+lg.run_inference(debug=False).loc['rich']
+```
+
+
+:::
+
+
+
+# Appendix: Data files
+
+## Travel survey dataset *survey.txt*
+
+| Column header | Variable                 |
+|---------------|--------------------------|
+| A      | Age category    |
+| R          | Size of region |
+| E       | Education level    |
+| O           | Employment |
+| S        |   Sex (F/M) |
+| T       | Travel mode        |
+
+
+## Grace and Keeley dataset *keeley.csv*
+
+| Column header | Variable                 |
+|---------------|--------------------------|
+| distance      | Distance to coast (m)    |
+| elev          | Elevation a.s.l.         |
+| abiotic       | Abiotic favorability     |
+| age           | Age of stand before fire |
+| hetero        | Plot heterogeneity       |
+| firesev       | Severity of fire         |
+| cover         | Cover of plants          |
+| rich          | Plant species richness   |
+

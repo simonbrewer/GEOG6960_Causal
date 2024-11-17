@@ -1,0 +1,583 @@
+---
+title: "GEOG 6960 Causality in Geog. Studies 9"
+author: 
+  - name: "Simon Brewer"
+    email: simon.brewer@ess.utah.edu
+    affiliations:
+      - name: University of Utah
+        address: 260 Central Campus Drive
+        city: Salt Lake City
+        state: UT
+        postal-code: 84112
+date: last-modified
+format:
+  html:
+    toc: true
+editor: visual
+---
+
+```{r}
+#| echo: false
+set.seed(42)
+library(reticulate)
+use_condaenv("causal")
+```
+
+## Introduction
+
+In this lab, we're going to look at how to estimate moderation in causal models, and introduce working with latent variables. We'll use a synthetic example, and a(nother) ecological dataset on plant adaptation from Travis and Grace (2010) (*travis.csv*).
+
+## Coding SEMs
+
+Both R and Python have packages that allow you to create SEMs and estimate coefficients based on a dataset.
+
+-   R: **lavaan** and **sem**
+-   Python: **semopy** (`pip install semopy`)
+
+First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+#| output: false
+library(tidyverse)
+library(GGally)
+library(lavaan)
+library(lavaanPlot)
+```
+
+# Python
+
+```{python}
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import semopy
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+```
+:::
+
+
+## Moderation
+
+We'll start with an example of moderation analysis. In contrast to mediation analysis, moderation assumes that one (or more) of the paths in the model has a coefficient that varies dependent on another variable. In statistical modeling this is referred to as an interaction term, and is pretty easy to incorporate. Having a moderation does present a problem, however, as the causal effect calculated across a path is not a single constant, but depends on the second, moderating variable
+
+### Example data
+
+First, we're going to create a synthetic dataset, that include a moderation effect. This will have 4 variables, which we will create as follows:
+
+-   `s` a randomly distributed exogenous variable representing sleep: $s ~ N(6, 2)$
+-   `c` a random variable representing whether an individual is a coffee drinker or not ($[0,1]$)
+-   `w` an endogenous variable representing wakefulness: $w = 10 + 4\times s + 5 \times c + N(0, 5)$
+-   `t` the outcome variable representing test scores: $t = 50 + 20 \times w + N(0, 100)$
+
+Note that this implies *no* direct effect between `c` and `w`, just the moderation effect on `s -> w`. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+set.seed(42) 
+N <- 100 
+S <- rnorm(N, 6, 2)
+C <- sample(c(0,1), N, replace = TRUE)
+W <- 10 + 4 * S + 4 * (S*C) + rnorm(N, 0, 5)
+T <- 50 + 20 * W + rnorm(N, 0, 100)
+df <- data.frame(S = S, C = as.factor(C), W = W, T = T)
+```
+
+# Python
+
+```{python}
+np.random.seed(42)
+n = 100
+S = np.random.normal(6, 2, n)
+C = np.random.choice([0,1], n, replace=True)
+W = 10 + 4 * S + 5 * (S*C) + np.random.normal(0, 5, n)
+T = 50 + 20 * W + np.random.normal(0, 100, n)
+# e = -0.4*a + -0.4*d + np.random.normal(0, 0.01, n)
+
+df = pd.DataFrame({'S': S,
+                   'C': C,
+                   'W': W,
+                   'T': T})
+
+```
+:::
+
+As usual, we'll do a little exploration of the data before moving on.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggpairs(df)
+```
+
+# Python
+
+```{python}
+sns.pairplot(df)
+```
+:::
+
+### Path analysis
+
+Moderation effects can be estimated directly through path analysis or using a structural equation model (SEM). We'll start here with a path analysis. Note that this requires individual models to be built:
+
+- `w ~ s + s:c` where `s:c` represents the interaction between these terms
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+mod1 <- lm(W ~ S + S:C, df)
+summary(mod1)
+```
+
+# Python
+
+```{python}
+mod1 = smf.ols(formula='W ~ S + S:C', data=df)
+fit1 = mod1.fit()
+print(fit1.summary())
+```
+:::
+
+- `t ~ w` 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+mod2 <- lm(T ~ W, df)
+summary(mod2)
+```
+
+# Python
+
+```{python}
+mod2 = smf.ols(formula='T ~ W', data=df)
+fit2 = mod2.fit()
+print(fit2.summary())
+```
+:::
+
+With these two models fit, we can estimate the causal effect using the product of the path coefficients. To get the effect for non-coffee drinkers, we ignore the interaction coefficient, giving:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+c0 = coef(mod1)["S"] * coef(mod2)["W"]
+c0
+```
+
+# Python
+
+```{python}
+c0 = fit1.params['S'] * fit2.params['W']
+print(f'Non-coffee drinkers: {np.round(c0, 4)}')
+```
+:::
+
+For coffee drinkers, we need to include this. Unlike the path coefficients, we simply add this to the effect of `s -> w`:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+c1 = (coef(mod1)["S"] + coef(mod1)["S:C1"]) * coef(mod2)["W"]
+c1
+```
+
+# Python
+
+```{python}
+c1 = (fit1.params['S'] + fit1.params['S:C']) * fit2.params['W']
+print(f'Coffee drinkers: {np.round(c1, 4)}')
+```
+:::
+
+The resulting effect is approximately twice that of non-coffee drinkers. To understand where this comes from, take another look at how the data were created. We used an effect of 4 for the path `s -> w`. The moderation effect was also 4, so effect for coffee drinkers should roughly double. Try re-running this but changing the moderation to a different value (e.g. 2) and see if you get the expected change 
+
+### SEM
+
+Next, we'll fit the same model as a structural equation model. As a reminder, this will not give a different estimate of the effect, but will return standard errors on the moderation effect and the Chi-squared test on overall model fit. 
+
+::: {.panel-tabset group="language"}
+
+# R
+
+In R, we'll fit this with **lavaan**. This does not appear to accept the standard formula syntax for an interaction (`:`), so first we'll calculate this by hand:
+
+```{r}
+df = df %>%
+  mutate(C = as.numeric(C)-1,
+         S_C = S * C)
+```
+
+Next, let's create the **lavaan** model specification. The basic formula looks like this:
+
+```
+W ~ S + S_C
+T ~ W
+```
+
+However, it would be good to estimate the standard errors on the moderation term. To do this we use variables within the model call to represent the different path coefficients (`a`, `b`, `c`). We can then recombine these to create new values using the `:=` syntax:
+
+```{r}
+mod <-
+"
+## Structural effects
+W ~ a*S + b*S_C
+T ~ c*W
+## Moderated effects
+c0 := a * c
+c1 := (a+b) * c
+"
+```
+
+Now let's fit and show the model:
+
+```{r}
+sem_mod <- sem(mod, df, fixed.x = FALSE)
+summary(sem_mod)
+```
+
+At the end of the output, you should see the two causal effects (non-coffee and coffee drinkers).
+
+```{r eval=FALSE}
+lavaanPlot(sem_mod, 
+  edge_options = list(color = "grey"),
+  coefs = TRUE)
+```
+
+
+# Python
+
+In Python, we'll fit this with **semopy**. This does not appear to accept the standard formula syntax for an interaction (`:`), so first we'll calculate this by hand:
+
+```{python}
+df['S_C'] = df['S'] * df['C']
+```
+
+Next, let's create the **lavaan** model specification:
+
+```{python}
+sem_formula = 'W ~ a*S + b*S_C\nT ~ c*W'
+```
+
+Now let's fit and show the model:
+
+```{python}
+mod = semopy.Model(sem_formula)
+res = mod.fit(df, obj='MLW')
+```
+
+```{python}
+mod.inspect()
+```
+
+```{python}
+semopy.calc_stats(mod)[['chi2', 'chi2 p-value']]
+```
+
+Note that semopy does not allow for the estimation of the additional values, but we can do this as above, with the path models.
+
+:::
+
+## Latent variable models
+
+We'll now take a look at the use of latent variables (LVs) in these models. LVs represent unobserved variables, generally something that was not or cannot be measured. As these are unobserved, we use *indicator* variables to work with them. These (indicators) are variables in the system that are assumed to be expressions of latent variable, but that are measurable. 
+
+LVs are generally used represent larger, theoretical variables (especially in behavioral sciences), and have a role in explaining why the exogenous variables may be correlated (as they are driven by the LV). 
+
+### Data
+
+Let's start by loading some data. These are observations from a paper by Travis and Grace (2010) on the growth of transplanted individuals of a plant species. The goal of the study is to understand if the degree of locality, represented by genetic distance from local populations, is related to a conceptual varaible describing plant *performance*. As this cannot be directly measured, the data instead contain a series of physical variables (e.g. diameter or number of stems) that can be measured. Let's load the data and take a quick look.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis <- read.csv("./data/travis.csv")
+head(travis)
+```
+
+# Python
+
+```{python}
+travis = pd.read_csv("./data/travis.csv")
+travis.head()
+```
+:::
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggpairs(travis)
+```
+
+# Python
+
+```{python}
+sns.pairplot(travis)
+```
+:::
+
+Here's the correlation matrix for the measured physical variables. Note that these are generally highly correlated, which suggests that there is a common cause: 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+cor(travis[, 4:8])
+```
+
+# Python
+
+```{python}
+travis.iloc[:,3:8].corr()
+```
+:::
+
+### Measurement model
+
+Based on this we can describe a *measurement* model, that relates the LV (`performance`) to the observed measurements. Latent variables are described with `~=` syntax, with the LV on the left hand side and the measured, indicators on the right.
+
+![Latent variable model for Travis and Grace dataset](images/week9_1.png)
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_latent_formula1 <- '
+performance =~ stems + infls + clonediam + leafht + leafwdth
+'
+```
+
+# Python
+
+```{python}
+travis_latent_formula1 ='performance =~ stems + infls + clonediam + leafht + leafwdth'
+```
+:::
+
+We can now estimate the model:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_latent_model1 <- sem(travis_latent_formula1, travis)
+summary(travis_latent_model1)
+```
+
+# Python
+
+```{python}
+mod1 = semopy.Model(travis_latent_formula1)
+res1 = mod1.fit(travis)
+mod1.inspect()
+```
+
+And here's the Chi-squared:
+
+```{python}
+semopy.calc_stats(mod1)[['chi2', 'chi2 p-value']]
+```
+
+:::
+
+The output has changed a little, now we have information on the factor loadings. In Python, this is the first few lines of the `inspect()` output (`op` = `~`). In R, these are found under the heading `Latent Variables:`. The estimates here represent the *loadings* obtained from a factor analysis of the observed variables. These are standardized to the first variable (this will always be 1). Higher values indicate that a variable is a good representative of the LV, and lower values indicate that the variable is influenced by other factors in addition to the LV. 
+
+Two of the variables have fairly low values, but these are sensitive to the scale of the variables. Let's re-run this now with scaled variables:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis <- travis %>%
+  mutate(stems = (stems - mean(stems)) / sd(stems),
+         infls = (infls - mean(infls)) / sd(infls),
+         clonediam = (clonediam - mean(clonediam)) / sd(clonediam),
+         leafht = (leafht - mean(leafht)) / sd(leafht),
+         leafwdth = (leafwdth - mean(leafwdth)) / sd(leafwdth))
+summary(travis)
+```
+
+```{r}
+travis_latent_model1 <- sem(travis_latent_formula1, travis)
+summary(travis_latent_model1)
+```
+
+# Python
+
+```{python}
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+
+#df[['x','z']] = minmax_scale(df[['x','z']])
+sel_columns = ['stems', 'infls', 'clonediam', 'leafht', 'leafwdth']
+travis[sel_columns] = scaler.fit_transform(travis[sel_columns])
+
+travis.describe()
+```
+
+```{python}
+mod1 = semopy.Model(travis_latent_formula1)
+res1 = mod1.fit(travis)
+mod1.inspect()
+```
+
+:::
+
+Scaling the variables increases the loading for `infls` and `leafwdth`, indicating that the previous low values were just a result of difference in magnitude of the variables. Now plot the resulting model.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r eval=FALSE}
+lavaanPlot(travis_latent_model1, coefs = TRUE, covs = TRUE)
+```
+
+# Python
+
+```{python}
+g = semopy.semplot(mod1, "test.png")
+g
+```
+:::
+
+In the results, we got a significant Chi-squared test. This suggests that some information is lacking in the model. We can use the modification indices to try and work out what might be missing. As a reminder, these show how much the model would improve if a given path is included in the model (look for high values in the `mi` column). The R output for this is shown below as I have not yet found a Python function to run this
+
+```{r}
+modindices(travis_latent_model1)
+```
+
+The largest value is for the path `leafht ~~  leafwdth`. The double `~~` represents a missing covariance or correlation between variables (here between the width and length of a leaf). We'll include this now and re-run the model. (Note that you could argue for a latent variable representing `leaf size` that links to both of these.)
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_latent_formula2 <- '
+performance =~ stems + infls + clonediam + leafht + leafwdth
+leafht ~~ leafwdth
+'
+travis_latent_model2 <- sem(travis_latent_formula2, travis)
+summary(travis_latent_model2)
+```
+
+# Python
+
+```{python}
+travis_latent_formula2 ='performance =~ stems + infls + clonediam + leafht + leafwdth\nleafht ~~ leafwdth'
+print(travis_latent_formula2)
+```
+
+```{python}
+mod2 = semopy.Model(travis_latent_formula2)
+res2 = mod2.fit(travis)
+mod2.inspect()
+```
+
+```{python}
+semopy.calc_stats(mod2)[['chi2', 'chi2 p-value']]
+```
+
+:::
+
+This has fixed the problem and we now have a non-significant Chi-squared test. 
+
+### Structural model
+
+The measurement model (above) is used to describe the relationship between an LV and the observed variables that represent it. We can go further by linking this to an observed outcome in a structural model. (Note that you can also use LVs with the outcome, but we won't cover that here.)
+
+To do this, we need to expand the model formula to include both the measurement and strucutral model. We'll also keep the covariance between the two leaf variables.
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_path_formula1 <- '
+# meaasurement model
+performance =~ stems + infls + clonediam + leafht + leafwdth
+
+# structural model
+performance ~ geneticdist
+
+# correlated errors
+leafht ~~ leafwdth
+'
+```
+
+# Python
+
+```{python}
+travis_path_formula1 = 'performance =~ stems + infls + clonediam + leafht + leafwdth\nperformance ~ geneticdist\nleafht ~~ leafwdth'
+print(travis_path_formula1)
+```
+:::
+
+Now let's fit and check the model:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+travis_path_model1 <- sem(travis_path_formula1, travis)
+summary(travis_path_model1)
+```
+
+# Python
+
+```{python}
+mod3 = semopy.Model(travis_path_formula1)
+res3 = mod3.fit(travis)
+mod3.inspect()
+```
+
+```{python}
+semopy.calc_stats(mod3)[['chi2', 'chi2 p-value']]
+```
+:::
+
+The model shows a good fit, and a significant negative relationship between plant `performance` and genetic distance. This supports a general hypothesis that non-local plant tend to not grow (or perform) as well as local populations. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r eval=FALSE}
+lavaanPlot(travis_path_model1, coefs = TRUE, covs = TRUE)
+```
+
+# Python
+
+```{python}
+g = semopy.semplot(mod3, "test.png", plot_covs=True)
+g
+```
+:::
+
+# Appendix: Data files
+
+## Tavis and Grace dataset *travis.csv*
+
+| Column header | Variable                 |
+|---------------|--------------------------|
+| siteno        | Site ID    |
+| latitude      | Latitude         |
+| geneticdist   | Genetic dissimilarity to local populations    |
+| stems         | Stem density |
+| infls         | Number of infloresences       |
+| clonediam     | Clone diameter        |
+| leafht        | Leaf height          |
+| leafwdth      | Leaf width   |
+
+stem density, the number of infloresences, clone diameter, 
