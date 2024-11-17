@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.553">
+<meta name="generator" content="quarto-1.5.57">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Simon Brewer">
-<meta name="dcterms.date" content="2024-11-09">
+<meta name="dcterms.date" content="2024-11-16">
 
 <title>GEOG 6960 Causality in Geographic Studies</title>
 <style>
@@ -101,7 +101,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 9, 2024</p>
+      <p class="date">November 16, 2024</p>
     </div>
   </div>
   
@@ -145,6 +145,10 @@ ul.task-list li input[type="checkbox"] {
 <ul>
 <li><a href="https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week8.html">Lab notes</a></li>
 </ul></li>
+<li>Week 9
+<ul>
+<li><a href="https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week9.html">Lab notes</a></li>
+</ul></li>
 </ul>
 </section>
 <section id="data" class="level1">
@@ -154,6 +158,7 @@ ul.task-list li input[type="checkbox"] {
 <li>Mosquito net dataset (<a href="https://drive.google.com/file/d/1TbscKcYSuDhOg_FPhb5faIPyNGuNdTUA/view?usp=sharing">mosquito_nets.csv</a>)</li>
 <li>Shipley tree mortality dataset (<a href="https://drive.google.com/file/d/14MNcR3IT2GsVvHAb1P2r5gZAmiIjoomZ/view?usp=sharing">shipley.csv</a>)</li>
 <li>Boreal NDVI dataset (<a href="https://drive.google.com/file/d/1Kl_nqCETZyg92RL2lVdtGaWcfSDcXE_x/view?usp=sharing">boreal.csv</a>)</li>
+<li>Travis and Grace data set (<a href="https://drive.google.com/file/d/1CG__WvPOvS_5yUfAoNE4ovD7u77sH_rq/view?usp=sharing">travis.csv</a>)</li>
 </ul>
 
 
@@ -203,18 +208,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -246,7 +240,29 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
       var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -254,7 +270,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
     // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
     for (var i=0; i<links.length; i++) {
       const link = links[i];
       if (!isInternal(link.href)) {
