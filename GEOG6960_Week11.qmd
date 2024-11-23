@@ -27,12 +27,12 @@ use_condaenv("causalml")
 
 In this lab, we're going to look at new method for causal analysis using machine learning algorithms. We'll use a set of synthetic data sets:
 
-## Coding SEMs
+## Software for causal ML
 
 Both R and Python have packages that allow you to create SEMs and estimate coefficients based on a dataset.
 
 -   R: **lavaan** and **sem**
--   Python: **semopy** (`pip install semopy`)
+-   Python: both Uber (**CausalML**) and Microsoft (**EconML**) have published libraries for causal ML. We'll use **EconML** here. 
 
 First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
 
@@ -43,8 +43,6 @@ First load (or install and load) the relevant packages. We'll need some addition
 #| output: false
 library(tidyverse)
 library(GGally)
-library(lavaan)
-library(lavaanPlot)
 ```
 
 # Python
@@ -53,60 +51,52 @@ library(lavaanPlot)
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import semopy
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+
+import matplotlib.pyplot as plt
 ```
 :::
 
-## Moderation
+## Meta-learners
 
-We'll start with an example of moderation analysis. In contrast to mediation analysis, moderation assumes that one (or more) of the paths in the model has a coefficient that varies dependent on another variable. In statistical modeling this is referred to as an interaction term, and is pretty easy to incorporate. Having a moderation does present a problem, however, as the causal effect calculated across a path is not a single constant, but depends on the second, moderating variable
+Meta-learners refer to a family of different approaches for causal ML. The common theme with these is that they are not tied to a single ML algorithm, but can use pretty much any standard algorithm. We'll look at S- and T-learners here. Meta-learners also include X- and R-learners, with increased complexity (notably in trying to reduce biases). 
 
 ### Example data
 
-First, we're going to create a synthetic dataset, that include a moderation effect. This will have 4 variables, which we will create as follows:
+Let's load the first example dataset (*week11_ex1.csv*). This contains only three variables:
 
--   `s` a randomly distributed exogenous variable representing sleep: $s ~ N(6, 2)$
--   `c` a random variable representing whether an individual is a coffee drinker or not ($[0,1]$)
--   `w` an endogenous variable representing wakefulness: $w = 10 + 4\times s + 5 \times c + N(0, 5)$
--   `t` the outcome variable representing test scores: $t = 50 + 20 \times w + N(0, 100)$
+-   `age`: a randomly distributed exogenous variable representing age: $age ~ U(18, 60)$
+-   `premum` a random variable representing the treatment (whether an individual was sent the premium offer; roughly 10% of the observations) ($[0,1]$)
+-   `revenue` the outcome variable representing revenue obtained from the customer: 
+    - Baseline revenue is given as: $y_0 = 10$
+    - Revenue is increased for 'premium' customers as $y_1 = y_0 + 0.5$
+    - A non-linear age effect is added to the baseline for customers between 30 and 50 years old ($0.1$)
+    - A second non-linear age effect is added for 'treated' customers between 35 and 45 years old ($0.3$)
+    
+The true process is shown by the lines in the figure below. Note that the effect is constant for most of the age range (i.e. the distance between the lines is the same), but increases between 35 and 45 years by 0.3:
 
-Note that this implies *no* direct effect between `c` and `w`, just the moderation effect on `s -> w`.
+![True process for example 1](images/week11_2.png) 
+
+The *effect* can be shown as the difference between these two lines (note the non-linearity). It's this that we'll be trying to model in this section.
+
+![Effect for example 1](images/week11_3.png) 
 
 ::: {.panel-tabset group="language"}
 # R
 
 ```{r}
-set.seed(42) 
-N <- 100 
-S <- rnorm(N, 6, 2)
-C <- sample(c(0,1), N, replace = TRUE)
-W <- 10 + 4 * S + 4 * (S*C) + rnorm(N, 0, 5)
-T <- 50 + 20 * W + rnorm(N, 0, 100)
-df <- data.frame(S = S, C = as.factor(C), W = W, T = T)
+df = read.csv("./data/week11_ex1.csv")
+head(df)
 ```
 
 # Python
 
 ```{python}
-np.random.seed(42)
-n = 100
-S = np.random.normal(6, 2, n)
-C = np.random.choice([0,1], n, replace=True)
-W = 10 + 4 * S + 5 * (S*C) + np.random.normal(0, 5, n)
-T = 50 + 20 * W + np.random.normal(0, 100, n)
-# e = -0.4*a + -0.4*d + np.random.normal(0, 0.01, n)
-
-df = pd.DataFrame({'S': S,
-                   'C': C,
-                   'W': W,
-                   'T': T})
-
+df = pd.read_csv("./data/week11_ex1.csv")
+df.head()
 ```
 :::
-
-As usual, we'll do a little exploration of the data before moving on.
 
 ::: {.panel-tabset group="language"}
 # R
@@ -122,440 +112,285 @@ sns.pairplot(df)
 ```
 :::
 
-### Path analysis
 
-Moderation effects can be estimated directly through path analysis or using a structural equation model (SEM). We'll start here with a path analysis. Note that this requires individual models to be built:
-
--   `w ~ s + s:c` where `s:c` represents the interaction between these terms
+As a baseline, let's fit a linear model to these data. To account for the non-constant effect of `age`, we can treat this as a moderator, with an interaction with the treatment (`premium`):
 
 ::: {.panel-tabset group="language"}
 # R
 
 ```{r}
-mod1 <- lm(W ~ S + S:C, df)
-summary(mod1)
+linear_model = lm(revenue ~ premium * age, df)
+summary(linear_model)
 ```
 
 # Python
 
 ```{python}
-mod1 = smf.ols(formula='W ~ S + S:C', data=df)
-fit1 = mod1.fit()
-print(fit1.summary())
+linear_model = smf.ols('revenue ~ premium * age',
+                        data=df).fit()
+linear_model.summary().tables[1]
 ```
 :::
 
--   `t ~ w`
+The results show a significant treatment effect, but no significance with either `age` or the interaction term. This is fairly understandable: there is no linear trend with age (just the offset for 35 to 45), nor is there any difference in the trends that are fit. 
+
+We can visualize these to show these results: note that there's a fairly large distance between the lines (the `premium` effect), but no real difference in slope:
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-mod2 <- lm(T ~ W, df)
-summary(mod2)
+```{r warning=FALSE, message=FALSE}
+library(ggeffects)
+plot(ggpredict(linear_model, 
+               terms = c("age", "premium")), 
+     show_data = TRUE)
 ```
 
 # Python
 
 ```{python}
-mod2 = smf.ols(formula='T ~ W', data=df)
-fit2 = mod2.fit()
-print(fit2.summary())
+df['mu1_hat'] = linear_model.predict(df.assign(premium=1))
+df['mu0_hat'] = linear_model.predict(df.assign(premium=0))
+sns.scatterplot(data=df, x='age', y='revenue', hue='premium', s=40, legend=True)
+sns.lineplot(data=df, x='age', y='mu0_hat', label='$\mu_0$')
+sns.lineplot(data=df, x='age', y='mu1_hat', label='$\mu_1$')
 ```
 :::
 
-With these two models fit, we can estimate the causal effect using the product of the path coefficients. To get the effect for non-coffee drinkers, we ignore the interaction coefficient, giving:
+### S-learner
+
+We'll start by fitting a S-learner model. This is the simplest of the causal ML methods, and uses a single ML model, but with the treatment variable included as one of the predictive features. 
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-c0 = coef(mod1)["S"] * coef(mod2)["W"]
-c0
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
+In Python, we need to first one-hot encode the `premium` variable, then extract the relevant data. 
+
 ```{python}
-c0 = fit1.params['S'] * fit2.params['W']
-print(f'Non-coffee drinkers: {np.round(c0, 4)}')
+df2 = pd.get_dummies(df, columns=['premium'], drop_first=True, dtype=int)
+df2.columns
+
+X = df2['age'].to_numpy()
+T = df2['premium_True'].to_numpy()
+y = df2['revenue'].to_numpy()
+```
+
+For a first attempt, we'll use the `Slearner` function from **EconML** together with **scikit-learn**'s decision tree model in the learner. First import this and instantiate it:
+
+```{python}
+from econml.metalearners import SLearner
+from sklearn.tree import DecisionTreeRegressor
+
+s_learner = SLearner(overall_model=DecisionTreeRegressor(min_impurity_decrease=0.001))
+```
+
+Now fit it to the data:
+
+```{python}
+s_learner.fit(y, T, X=X.reshape(-1, 1))
+```
+
+And we can obtain the average treatment effect:
+
+```{python}
+s_learner.ate()
 ```
 :::
 
-For coffee drinkers, we need to include this. Unlike the path coefficients, we simply add this to the effect of `s -> w`:
+Now we can visualize the results as the effect (the predicted difference between treated and control:
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-c1 = (coef(mod1)["S"] + coef(mod1)["S:C1"]) * coef(mod2)["W"]
-c1
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
 ```{python}
-c1 = (fit1.params['S'] + fit1.params['S:C']) * fit2.params['W']
-print(f'Coffee drinkers: {np.round(c1, 4)}')
+X_test = np.arange(20,60)
+y_test_s_effect = s_learner.effect(X_test.reshape(-1,1))
+
+plt.plot(X_test, y_test_s_effect, label="S-Learner (DT)")
+```
+
+:::
+
+Here you can see that the decision tree has picked up on the age effect in the non-treated customers, but not in the treated one. This is due to the imbalanced dataset: there are large difference in the number of customers between the two groups. 
+
+We'll try to improve on this below by using a different learner. But first, let's see what the effect is of using a different algorithm, by using a random forest:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
+```
+
+# Python
+
+```{python}
+from sklearn.ensemble import RandomForestRegressor
+
+s_learner = SLearner(overall_model=RandomForestRegressor(max_depth=4))
+s_learner.fit(y, T, X=X.reshape(-1, 1))
+```
+
+```{python}
+y_test_s_effect = s_learner.effect(X_test.reshape(-1,1))
+plt.plot(X_test, y_test_s_effect, label="S-Learner (RF)")
 ```
 :::
 
-The resulting effect is approximately twice that of non-coffee drinkers. To understand where this comes from, take another look at how the data were created. We used an effect of 4 for the path `s -> w`. The moderation effect was also 4, so effect for coffee drinkers should roughly double. Try re-running this but changing the moderation to a different value (e.g. 2) and see if you get the expected change
+This does a better overall job at capturing the effect. There's some noise, particularly in the younger and older ages. Tuning the random forest, or using a different algorithm may help to reduce this. 
 
-### SEM
+### T-learner
 
-Next, we'll fit the same model as a structural equation model. As a reminder, this will not give a different estimate of the effect, but will return standard errors on the moderation effect and the Chi-squared test on overall model fit.
-
-::: {.panel-tabset group="language"}
-# R
-
-In R, we'll fit this with **lavaan**. This does not appear to accept the standard formula syntax for an interaction (`:`), so first we'll calculate this by hand:
-
-```{r}
-df = df %>%
-  mutate(C = as.numeric(C)-1,
-         S_C = S * C)
-```
-
-Next, let's create the **lavaan** model specification. The basic formula looks like this:
-
-```         
-W ~ S + S_C
-T ~ W
-```
-
-However, it would be good to estimate the standard errors on the moderation term. To do this we use variables within the model call to represent the different path coefficients (`a`, `b`, `c`). We can then recombine these to create new values using the `:=` syntax:
-
-```{r}
-mod <-
-"
-## Structural effects
-W ~ a*S + b*S_C
-T ~ c*W
-## Moderated effects
-c0 := a * c
-c1 := (a+b) * c
-"
-```
-
-Now let's fit and show the model:
-
-```{r}
-sem_mod <- sem(mod, df, fixed.x = FALSE)
-summary(sem_mod)
-```
-
-At the end of the output, you should see the two causal effects (non-coffee and coffee drinkers).
-
-```{r eval=FALSE}
-lavaanPlot(sem_mod, 
-  edge_options = list(color = "grey"),
-  coefs = TRUE)
-```
-
-# Python
-
-In Python, we'll fit this with **semopy**. This does not appear to accept the standard formula syntax for an interaction (`:`), so first we'll calculate this by hand:
-
-```{python}
-df['S_C'] = df['S'] * df['C']
-```
-
-Next, let's create the **lavaan** model specification:
-
-```{python}
-sem_formula = 'W ~ a*S + b*S_C\nT ~ c*W'
-```
-
-Now let's fit and show the model:
-
-```{python}
-mod = semopy.Model(sem_formula)
-res = mod.fit(df, obj='MLW')
-```
-
-```{python}
-mod.inspect()
-```
-
-```{python}
-semopy.calc_stats(mod)[['chi2', 'chi2 p-value']]
-```
-
-Note that semopy does not allow for the estimation of the additional values, but we can do this as above, with the path models.
-:::
-
-## Latent variable models
-
-We'll now take a look at the use of latent variables (LVs) in these models. LVs represent unobserved variables, generally something that was not or cannot be measured. As these are unobserved, we use *indicator* variables to work with them. These (indicators) are variables in the system that are assumed to be expressions of latent variable, but that are measurable.
-
-LVs are generally used represent larger, theoretical variables (especially in behavioral sciences), and have a role in explaining why the exogenous variables may be correlated (as they are driven by the LV).
-
-### Data
-
-Let's start by loading some data. These are observations from a paper by Travis and Grace (2010) on the growth of transplanted individuals of a plant species. The goal of the study is to understand if the degree of locality, represented by genetic distance from local populations, is related to a conceptual varaible describing plant *performance*. As this cannot be directly measured, the data instead contain a series of physical variables (e.g. diameter or number of stems) that can be measured. Let's load the data and take a quick look.
+The T-learner uses two different models: one for the controls, one for the treatment. This can avoid some of the issues with the S-learner, particularly when one of the groups is sparse.Unlike the S-learner, the treatment variable is not used to fit the model, but to split the data. This allows a greater amount of flexibility as different algorithms can be used for the two groups. Here we'll start with a simple decision tree for each model. 
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-travis <- read.csv("./data/travis.csv")
-head(travis)
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
 ```{python}
-travis = pd.read_csv("./data/travis.csv")
-travis.head()
+from econml.metalearners import TLearner
+
+t_learner = TLearner(models=[DecisionTreeRegressor(min_impurity_decrease=0.001), 
+                   DecisionTreeRegressor(min_impurity_decrease=0.001)])
+t_learner.fit(y, T, X=X.reshape(-1, 1))
+```
+
+```{python}
+y_test_t_effect = t_learner.effect(X_test.reshape(-1,1))
+plt.plot(X_test, y_test_t_effect, label="T-Learner (DT/DT)")
 ```
 :::
 
+This is much better fit than the equivalent S-learner. By splitting the data, the model is not imbalanced towards the control group. It's a little noisy compared to the true effect, but this could be fixed by reducing the complexity of the decision trees or by replacing one of the trees with a simpler algorithm. 
+
+To illustrate this last point, we'll refit the learner with a learned for the first model (the control group) and a random forest for the second (the treatment group):
+
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-ggpairs(travis)
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
 ```{python}
-sns.pairplot(travis)
+from sklearn.linear_model import LinearRegression
+
+t_learner = TLearner(models=[LinearRegression(), 
+                   RandomForestRegressor(max_depth=4)])
+t_learner.fit(y, T, X=X.reshape(-1, 1))
+```
+
+```{python}
+y_test_t_effect = t_learner.effect(X_test.reshape(-1,1))
+plt.plot(X_test, y_test_t_effect, label="T-Learner (LR/RF)")
 ```
 :::
 
-Here's the correlation matrix for the measured physical variables. Note that these are generally highly correlated, which suggests that there is a common cause:
+### Metalearner interpretation
+
+Note that you can access the individual models within the learner. This means that you can use the usual set of model interpretation methods (feature importance, partial dependencies, Shapley values). As this model only has a single feature, the importance is not very interesting, but for reference, you can access the values as follows:
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-cor(travis[, 4:8])
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
+To get the feature importance from the treatment model (the random forest) in the T-learner:
+
+
 ```{python}
-travis.iloc[:,3:8].corr()
+t_learner.models[1].feature_importances_
 ```
+
+And you can plot the partial dependency on `age` (the only feature) with:
+
+```{python}
+from sklearn.inspection import PartialDependenceDisplay
+PartialDependenceDisplay.from_estimator(t_learner.models[1], X.reshape(-1,1), [0])
+```
+
 :::
 
-### Measurement model
 
-Based on this we can describe a *measurement* model, that relates the LV (`performance`) to the observed measurements. Latent variables are described with `~=` syntax, with the LV on the left hand side and the measured, indicators on the right.
+## Causal Forests
 
-![Latent variable model for Travis and Grace dataset](images/week9_1.png)
+We'll next look at causal forests. These are modifications of random forests designed to best estimate the CATE (the individual or heterogenous treatment effect). As a result, they have a few differences with a traditional RF model:
+
+- All tree splits are chosen to maximize the difference in the treatment effect, not the error against the observed value. In other words, each split divides between a control and treated group, and the value of the split corresponds to the largest difference in the outcome between these groups
+- The forests are *honest*: the splitting and the calculation of the difference in effect are carried out using two subsets of data
+- The forests usually include cross-fitting: the subsets for splitting and testing are reversed, and the models are averaged
+
+These models have a number of theoretical advantages: they are unbiased estimators and they can be used to generate confidence intervals around the estimated effects
+
+We'll fit one here using the same dataset as in the meta-learner section. 
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-travis_latent_formula1 <- '
-performance =~ stems + infls + clonediam + leafht + leafwdth
-'
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
+In Python, we can use the `CausalForest` function from **EconML**. This has a very similar interface to the metalearners above:
+
 ```{python}
-travis_latent_formula1 ='performance =~ stems + infls + clonediam + leafht + leafwdth'
+from econml.grf import CausalForest
+
+cf = CausalForest()
+cf.fit(X=X.reshape(-1, 1), T=T, y=y)
 ```
+
+The CATE values can be extracted with `predict()`. To get the ATE:
+
+```{python}
+cf.predict(X.reshape(-1, 1)).mean()
+```
+
 :::
 
-We can now estimate the model:
+And the effect can be visualized as before. The results here are smoother than the meta-learners. This is largely a result of the averaging through cross-fitting:
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r}
-travis_latent_model1 <- sem(travis_latent_formula1, travis)
-summary(travis_latent_model1)
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
 ```
 
 # Python
 
 ```{python}
-mod1 = semopy.Model(travis_latent_formula1)
-res1 = mod1.fit(travis)
-mod1.inspect()
+y_test_cf_effect = cf.predict(X_test.reshape(-1, 1))
+
+plt.plot(X_test, y_test_cf_effect, label="Causal Forest")
+plt.show()
 ```
 
-And here's the Chi-squared:
-
-```{python}
-semopy.calc_stats(mod1)[['chi2', 'chi2 p-value']]
-```
-:::
-
-The output has changed a little, now we have information on the factor loadings. In Python, this is the first few lines of the `inspect()` output (`op` = `~`). In R, these are found under the heading `Latent Variables:`. The estimates here represent the *loadings* obtained from a factor analysis of the observed variables. These are standardized to the first variable (this will always be 1). Higher values indicate that a variable is a good representative of the LV, and lower values indicate that the variable is influenced by other factors in addition to the LV.
-
-Two of the variables have fairly low values, but these are sensitive to the scale of the variables. Let's re-run this now with scaled variables:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-travis <- travis %>%
-  mutate(stems = (stems - mean(stems)) / sd(stems),
-         infls = (infls - mean(infls)) / sd(infls),
-         clonediam = (clonediam - mean(clonediam)) / sd(clonediam),
-         leafht = (leafht - mean(leafht)) / sd(leafht),
-         leafwdth = (leafwdth - mean(leafwdth)) / sd(leafwdth))
-summary(travis)
-```
-
-```{r}
-travis_latent_model1 <- sem(travis_latent_formula1, travis)
-summary(travis_latent_model1)
-```
-
-# Python
-
-```{python}
-from sklearn.preprocessing import StandardScaler
-
-scaler = StandardScaler()
-
-#df[['x','z']] = minmax_scale(df[['x','z']])
-sel_columns = ['stems', 'infls', 'clonediam', 'leafht', 'leafwdth']
-travis[sel_columns] = scaler.fit_transform(travis[sel_columns])
-
-travis.describe()
-```
-
-```{python}
-mod1 = semopy.Model(travis_latent_formula1)
-res1 = mod1.fit(travis)
-mod1.inspect()
-```
-:::
-
-Scaling the variables increases the loading for `infls` and `leafwdth`, indicating that the previous low values were just a result of difference in magnitude of the variables. Now plot the resulting model.
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r eval=FALSE}
-lavaanPlot(travis_latent_model1, coefs = TRUE, covs = TRUE)
-```
-
-# Python
-
-```{python}
-g = semopy.semplot(mod1, "test.png")
-g
-```
-:::
-
-In the results, we got a significant Chi-squared test. This suggests that some information is lacking in the model. We can use the modification indices to try and work out what might be missing. As a reminder, these show how much the model would improve if a given path is included in the model (look for high values in the `mi` column). The R output for this is shown below as I have not yet found a Python function to run this
-
-```{r}
-modindices(travis_latent_model1)
-```
-
-The largest value is for the path `leafht ~~  leafwdth`. The double `~~` represents a missing covariance or correlation between variables (here between the width and length of a leaf). We'll include this now and re-run the model. (Note that you could argue for a latent variable representing `leaf size` that links to both of these.)
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-travis_latent_formula2 <- '
-performance =~ stems + infls + clonediam + leafht + leafwdth
-leafht ~~ leafwdth
-'
-travis_latent_model2 <- sem(travis_latent_formula2, travis)
-summary(travis_latent_model2)
-```
-
-# Python
-
-```{python}
-travis_latent_formula2 ='performance =~ stems + infls + clonediam + leafht + leafwdth\nleafht ~~ leafwdth'
-print(travis_latent_formula2)
-```
-
-```{python}
-mod2 = semopy.Model(travis_latent_formula2)
-res2 = mod2.fit(travis)
-mod2.inspect()
-```
-
-```{python}
-semopy.calc_stats(mod2)[['chi2', 'chi2 p-value']]
-```
-:::
-
-This has fixed the problem and we now have a non-significant Chi-squared test.
-
-### Structural model
-
-The measurement model (above) is used to describe the relationship between an LV and the observed variables that represent it. We can go further by linking this to an observed outcome in a structural model. (Note that you can also use LVs with the outcome, but we won't cover that here.)
-
-To do this, we need to expand the model formula to include both the measurement and strucutral model. We'll also keep the covariance between the two leaf variables.
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-travis_path_formula1 <- '
-# meaasurement model
-performance =~ stems + infls + clonediam + leafht + leafwdth
-
-# structural model
-performance ~ geneticdist
-
-# correlated errors
-leafht ~~ leafwdth
-'
-```
-
-# Python
-
-```{python}
-travis_path_formula1 = 'performance =~ stems + infls + clonediam + leafht + leafwdth\nperformance ~ geneticdist\nleafht ~~ leafwdth'
-print(travis_path_formula1)
-```
-:::
-
-Now let's fit and check the model:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-travis_path_model1 <- sem(travis_path_formula1, travis)
-summary(travis_path_model1)
-```
-
-# Python
-
-```{python}
-mod3 = semopy.Model(travis_path_formula1)
-res3 = mod3.fit(travis)
-mod3.inspect()
-```
-
-```{python}
-semopy.calc_stats(mod3)[['chi2', 'chi2 p-value']]
-```
-:::
-
-The model shows a good fit, and a significant negative relationship between plant `performance` and genetic distance. This supports a general hypothesis that non-local plant tend to not grow (or perform) as well as local populations.
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r eval=FALSE}
-lavaanPlot(travis_path_model1, coefs = TRUE, covs = TRUE)
-```
-
-# Python
-
-```{python}
-g = semopy.semplot(mod3, "test.png", plot_covs=True)
-g
-```
 :::
 
 # Appendix: Data files
