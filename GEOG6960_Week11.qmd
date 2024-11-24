@@ -78,9 +78,30 @@ The true process is shown by the lines in the figure below. Note that the effect
 
 ![True process for example 1](images/week11_2.png) 
 
-The *effect* can be shown as the difference between these two lines (note the non-linearity). It's this that we'll be trying to model in this section.
+The *effect* can be shown as the difference between these two lines (note the non-linearity). It's this that we'll be trying to model in this section. 
 
 ![Effect for example 1](images/week11_3.png) 
+
+We can estimate this using the equation given above (this will be useful for plotting results):
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r warning=FALSE, message=FALSE}
+print("Goodbye cruel world")
+```
+
+# Python
+
+```{python}
+X_test = np.arange(20,60, 0.1)
+effect_test = [0.5]*len(X_test)
+effect_test = effect_test + 0.3*(35<X_test)*(X_test<45)
+plt.plot(X_test, effect_test)
+```
+
+:::
+
 
 ::: {.panel-tabset group="language"}
 # R
@@ -215,10 +236,12 @@ print("Goodbye cruel world")
 # Python
 
 ```{python}
-X_test = np.arange(20,60)
 y_test_s_effect = s_learner.effect(X_test.reshape(-1,1))
 
+plt.plot(X_test, effect_test, label="Truth")
 plt.plot(X_test, y_test_s_effect, label="S-Learner (DT)")
+plt.legend()
+plt.show()
 ```
 
 :::
@@ -245,7 +268,11 @@ s_learner.fit(y, T, X=X.reshape(-1, 1))
 
 ```{python}
 y_test_s_effect = s_learner.effect(X_test.reshape(-1,1))
+
+plt.plot(X_test, effect_test, label="Truth")
 plt.plot(X_test, y_test_s_effect, label="S-Learner (RF)")
+plt.legend()
+plt.show()
 ```
 :::
 
@@ -274,7 +301,11 @@ t_learner.fit(y, T, X=X.reshape(-1, 1))
 
 ```{python}
 y_test_t_effect = t_learner.effect(X_test.reshape(-1,1))
+
+plt.plot(X_test, effect_test, label="Truth")
 plt.plot(X_test, y_test_t_effect, label="T-Learner (DT/DT)")
+plt.legend()
+plt.show()
 ```
 :::
 
@@ -301,7 +332,11 @@ t_learner.fit(y, T, X=X.reshape(-1, 1))
 
 ```{python}
 y_test_t_effect = t_learner.effect(X_test.reshape(-1,1))
+
+plt.plot(X_test, effect_test, label="Truth")
 plt.plot(X_test, y_test_t_effect, label="T-Learner (LR/RF)")
+plt.legend()
+plt.show()
 ```
 :::
 
@@ -387,7 +422,402 @@ print("Goodbye cruel world")
 ```{python}
 y_test_cf_effect = cf.predict(X_test.reshape(-1, 1))
 
+plt.plot(X_test, effect_test, label="Truth")
 plt.plot(X_test, y_test_cf_effect, label="Causal Forest")
+plt.legend()
+plt.show()
+```
+
+:::
+
+## Double machine learning
+
+Double machine learning is a newer approach to causal ML. It is based around the Frisch-Waugh-Lovell theorem: that the effect of a variable on an outcome can be obtained through a regression based on residuals. This takes place as a series of steps:
+
+- Build a model ($mod_T$) of the treatment ($T$) as a function of all confounders
+- Calculate the residuals from this model ($\widetilde{T}$)
+- Build a model ($mod_Y$) of the outcome ($Y$) as a function of all confounders
+- Calculate the residuals from this model ($\widetilde{Y}$)
+- Build a model of the outcome residuals as a function of the treatment residuals ($\widetilde{Y} \sim \widetilde{T}$)
+
+The coefficient from this last model gives the debiased or orthogonal effect.
+
+### Example data
+
+The dataset we'll use is in *week11_ex3.csv*. This is another synthetic dataset designed to represent a marketing study, in which incentives are offered to customers to increase their purchases. In this, the outcome is the value of a customers order, and the treatment is whether or not they were offered the incentive in a pilot study. 
+
+The value of sales is related to these variables through the following equation (the names of the variables can be found in the appendix). Note that there are several non-linearities imposed in this equation that will impact the ability to estimate causal effects with linear models. The coefficient $\tau$ is the effect from the treatment, which is set to $\tau = 0.75$
+
+$$
+y = sin(\pi \cdot x1 \cdot x2) + 2(x3 - 0.5)^2 + x4 + 0.5 \cdot x5 + x6 \cdot x7 + x8^3 + sin(\pi \cdot x9 \cdot x10) + \tau T + \epsilon
+$$
+Let's start by reading the data:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+df = read.csv("./data/week11_ex3.csv")
+head(df)
+```
+
+# Python
+
+```{python}
+df = pd.read_csv("./data/week11_ex3.csv")
+df.head()
+```
+:::
+
+If oyu plot out any of the data, you'll see that it is quite noisy, but there are weakly perceptible relationships between the outcome and confounders:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+ggplot(df, aes(x = x01, y = y)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  theme_bw()
+```
+
+# Python
+
+```{python}
+sns.regplot(df, x='x01', y='y', 
+  lowess=True,
+  scatter_kws={"color": "black", "alpha": 0.3}, 
+  line_kws={"color": "blue"})
+```
+:::
+
+Just to illustrate the potential bias with non-linear confounders, we'll start by building a simple regression model that includes all `x` varaibles:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+my_formula = 'y ~ x01 + x02 + x03 + x04 + x05 + x06 + x07 + x08 + x09 + x10 + T'
+fit = lm(my_formula, df)
+# Extract the treatment coefficient
+ate_lr = round(coef(fit)["T"], 2)
+print(paste('The average treatment effect using Linear Regression is:', ate_lr))
+```
+
+# Python
+
+```{python}
+my_formula = 'y ~ x01 + x02 + x03 + x04 + x05 + x06 + x07 + x08 + x09 + x10 + T'
+mod = smf.ols(formula=my_formula, data=df)
+fit = mod.fit()
+# Extract the treatment coefficient
+ate_lr = round(fit.params['T'], 2)
+print(f'The average treatment effect using Linear Regression is: {ate_lr}')
+```
+:::
+
+### Linear DML
+
+Let's now train a linear double machine learning model. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+In Python, we use `LinearDML` from **EconML**. This function requires that we specify the algorithms for the two ML models:
+
+- `model_t`: the model for the treatment
+- `model_y`: the model for the outcome
+
+Here, we'll use the lightweight implementation of gradient boosted trees from **lightgbm** for speed (note that you can use all the scikit-learn algorithms here as well). We need to use the classifier for the treatment as it is a binary outcome, and the regressor for the outcome (sales). Once loaded, we then instantiate the model:
+
+```{python}
+from econml.dml import LinearDML
+from lightgbm import LGBMRegressor, LGBMClassifier
+
+dml = LinearDML(model_y=LGBMRegressor(verbose=-1), 
+                model_t=LGBMClassifier(verbose=-1), 
+                discrete_treatment=True)
+```
+
+Next extract the values into numpy arrays:
+
+```{python}
+features = ['x01', 'x02', 'x03', 'x04', 'x05', 'x06', 'x07', 'x08', 'x09', 'x10']
+X = df[features].to_numpy()
+y = df['y'].to_numpy()
+T = df['T'].to_numpy()
+```
+
+And now let's fit the model. The syntax here  indicates to use all variables as confounders (`W=X`) and none of the variables to model the effect. This will result in a constant, homogenous effect, with no variation across observations.
+
+```{python}
+dml.fit(y, T=T, X=None, W=X)
+```
+
+:::
+
+With that done, we can explore the model results:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+Here's the ATE. This should be much closer to the true values (0.75) than the simple linear model
+
+```{python}
+dml.ate()
+```
+
+We can also access the individual models. For the treatment model (note that there will be more than one model from internal cross validation):
+
+```{python}
+mod_t = dml.models_t[0][0]
+```
+
+And the outcome model:
+
+```{python}
+mod_y = dml.models_y[0][0]
+```
+
+As these are regular Python models, we can extract and plot the feature importance:
+
+```{python}
+importances = mod_y.feature_importances_
+indices = np.argsort(importances)[::-1]
+vip_df = pd.DataFrame({'feature': df.columns[0:10][indices],
+                   'importance': importances[indices]})
+sns.barplot(vip_df, x = 'importance', y = 'feature')
+```
+
+Or partial dependencies. Here, for example, is the partial dependency of the treatment on `X01`:
+
+```{python}
+PartialDependenceDisplay.from_estimator(mod_t, X, [0])
+```
+
+And the partial dependency of the outcome on `X01`:
+
+```{python}
+PartialDependenceDisplay.from_estimator(mod_y, X, [0])
+```
+:::
+
+### DML with heterogenous treatment
+
+The previous model assumed that the effect (once debiased) is constant across all observations. We can adjust that by using the features to model variations in the treatment effect ($\tau$). This changes the final model in the DML series (the regression of residuals) to:
+
+$$
+\widetilde{Y} \sim \widetilde{T} + X
+$$
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+In Python, we simply have to set `X=X`: 
+
+```{python}
+dml = LinearDML(model_y=LGBMRegressor(verbose=-1), 
+                model_t=LGBMClassifier(verbose=-1), 
+                discrete_treatment=True)
+dml.fit(y, T=T, X=X, W=X)
+```
+
+Here's the new ATE (should still be relatively unbiased):
+
+```{python}
+round(dml.ate(X=X), 2)
+```
+
+:::
+
+We'll illustrate the effect quickly here, by plotting the individual effects (CATE) against the values for the first variable (`X01`), which shows a small decline in effect at high values (note that this is just an effect of the randomness in the synthetic data, as no trend was added when the data was produced)
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+```{python}
+df['eff'] = dml.effect(X=X)
+sns.regplot(df, x='x01', y='eff',
+                 scatter_kws={"color": "black", "alpha": 0.3}, 
+                 line_kws={"color": "red"})
+```
+
+:::
+
+Note that all the extra interpretation can still be applied to this model.
+
+### Causal Forest DML 
+
+In the previous step, we went from a homogeneous treatment effect to a heterogeneous effect. As that model retains a linear estimate in the final stage, the only possible variation is linear and monotonic. For more complex CATE estimates, we can replace this final stage with a non-parametric estimator, for example, a causal forest. 
+
+We'll use another dataset here (*week11_4.csv*). This has a similar design to the previous set, with 10 features as potential confounders (`X01` to `X10`), one binary treatment (`T`) and an outcome (`y`). The main difference is that the treatment variable depends on the first confounder. Where `X01` is below zero, the treatment effect is zero, and then it scales linearly at $X_{01} > 0$
+
+![True effect for example 4](images/week11_4.png) 
+
+You can visualize the true effect as follows:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+```{python}
+X0_test = np.linspace(-2, 2, 100)
+effect_test = X0_test.copy()
+effect_test[X0_test < 0] = 0
+```
+
+```{python}
+plt.plot(X0_test, effect_test)
+```
+:::
+
+Let's get the data
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+```{python}
+df = pd.read_csv("./data/week11_ex4.csv")
+df.head()
+```
+
+And convert to numpy arrays:
+
+```{python}
+features = ['x01', 'x02', 'x03', 'x04', 'x05', 'x06', 'x07', 'x08', 'x09', 'x10']
+X = df[features].to_numpy()
+y = df['y'].to_numpy()
+T = df['T'].to_numpy()
+```
+:::
+
+Before estimating this with a causal forest, we'll use a linear DML model:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+We'll use `LinearDML` again to fit this. The main difference is that we'll allow the function to automatically choose the best algorithm between linear and forest approaches for the treatment and outcome model:
+
+```{python}
+dml = LinearDML(model_y='auto', 
+                model_t='auto', 
+                discrete_treatment=True)
+dml.fit(y, T=T, X=X, W=X)
+```
+:::
+
+And let's plot the effect:
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+```{python}
+X_test = np.zeros((100, 10))
+X_test[:, 0] = np.linspace(-2, 2, 100)
+```
+
+```{python}
+y_pred_dml = dml.effect(X_test)
+
+plt.plot(X0_test, effect_test, label="Truth")
+plt.plot(X_test[:,0], y_pred_dml, label="DML")
+plt.legend()
+plt.show()
+```
+:::
+
+Now let's fit the causal forest
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+The **EconML** library contains a function for double machine learning with a causal forest. The syntax is pretty much the same as the linear DML. We'll again use the automatic choice of first stage models.
+
+```{python}
+from econml.dml import CausalForestDML
+cfdml = CausalForestDML(model_t='auto',
+                        model_y='auto',
+                        discrete_treatment=True)
+cfdml.fit(y, T, X=X, W=X)
+```
+:::
+
+And compare the modeled effect. 
+
+::: {.panel-tabset group="language"}
+# R
+
+```{r}
+print("Blah blah blah")
+```
+
+# Python
+
+We'll extract both the effect and confidence interval for this final plot:
+
+```{python}
+y_pred_dml = cfdml.effect(X_test)
+lb, ub = cfdml.effect_interval(X_test, alpha=0.01)
+```
+
+```{python}
+plt.plot(X0_test, effect_test, label="Truth")
+plt.plot(X0_test, y_pred_dml, label="DML")
+plt.fill_between(X0_test, lb, ub, alpha=.4, label='CI')
+plt.legend()
 plt.show()
 ```
 
@@ -395,17 +825,36 @@ plt.show()
 
 # Appendix: Data files
 
-## Tavis and Grace dataset *travis.csv*
+## Example 1 *week11_ex1.csv*
 
 | Column header | Variable                                   |
 |---------------|--------------------------------------------|
-| siteno        | Site ID                                    |
-| latitude      | Latitude                                   |
-| geneticdist   | Genetic dissimilarity to local populations |
-| stems         | Stem density                               |
-| infls         | Number of infloresences                    |
-| clonediam     | Clone diameter                             |
-| leafht        | Leaf height                                |
-| leafwdth      | Leaf width                                 |
+| revenue        | Client revenue ($000s) |
+| premium      | Was client offered premium service [0,1] |
+| age   | Client age |
 
-stem density, the number of infloresences, clone diameter,
+## Example 3 *week11_ex3.csv*
+
+| Column header | Variable                                   |
+|----------|-----------|
+| x01 | days_since_last_order | 
+| x02 | order_count_last_7_days | 
+| x03 | order_count_last_30_days | 
+| x04 | order_count_last_180_days | 
+| x05 | order_value_last_7_days | 
+| x06 | order_value_last_30_days | 
+| x07 | order_value_last_180_days | 
+| x08| age | 
+| x09| gender | 
+| x10| city | 
+| T| Treatment | 
+| y| Sales | 
+
+## Example 4 *week11_ex4.csv*
+
+| Column header | Variable                                   |
+|----------|-----------|
+| x01-x10 | Confounders | 
+| T| Treatment | 
+| y| Sales | 
+
