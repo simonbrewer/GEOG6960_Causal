@@ -1,5 +1,5 @@
 ---
-title: "GEOG 6960 Causality in Geog. Studies 11"
+title: "GEOG 6960 Causality in Geog. Studies 11 (1)"
 author: 
   - name: "Simon Brewer"
     email: simon.brewer@ess.utah.edu
