@@ -29,10 +29,10 @@ In this lab, we're going to look at new method for causal analysis using machine
 
 ## Software for causal ML
 
-Both R and Python have packages that allow you to create SEMs and estimate coefficients based on a dataset.
+Both R and Python have packages for causal machine learning.
 
--   R: **lavaan** and **sem**
--   Python: both Uber (**CausalML**) and Microsoft (**EconML**) have published libraries for causal ML. We'll use **EconML** here. 
+-   R: **DoubleML**
+-   Python: both Uber (**CausalML**) and Microsoft (**EconML**) have published libraries for causal ML. We'll use **EconML** here.
 
 First load (or install and load) the relevant packages. We'll need some additional packages to explore the data before model building.
 
@@ -43,6 +43,9 @@ First load (or install and load) the relevant packages. We'll need some addition
 #| output: false
 library(tidyverse)
 library(GGally)
+library(ranger)
+library(rpart)
+library(DoubleML)
 ```
 
 # Python
@@ -60,7 +63,7 @@ import matplotlib.pyplot as plt
 
 ## Meta-learners
 
-Meta-learners refer to a family of different approaches for causal ML. The common theme with these is that they are not tied to a single ML algorithm, but can use pretty much any standard algorithm. We'll look at S- and T-learners here. Meta-learners also include X- and R-learners, with increased complexity (notably in trying to reduce biases). 
+Meta-learners refer to a family of different approaches for causal ML. The common theme with these is that they are not tied to a single ML algorithm, but can use pretty much any standard algorithm. We'll look at S- and T-learners here. Meta-learners also include X- and R-learners, with increased complexity (notably in trying to reduce biases).
 
 ### Example data
 
@@ -68,19 +71,19 @@ Let's load the first example dataset (*week11_ex1.csv*). This contains only thre
 
 -   `age`: a randomly distributed exogenous variable representing age: $age ~ U(18, 60)$
 -   `premum` a random variable representing the treatment (whether an individual was sent the premium offer; roughly 10% of the observations) ($[0,1]$)
--   `revenue` the outcome variable representing revenue obtained from the customer: 
-    - Baseline revenue is given as: $y_0 = 10$
-    - Revenue is increased for 'premium' customers as $y_1 = y_0 + 0.5$
-    - A non-linear age effect is added to the baseline for customers between 30 and 50 years old ($0.1$)
-    - A second non-linear age effect is added for 'treated' customers between 35 and 45 years old ($0.3$)
-    
+-   `revenue` the outcome variable representing revenue obtained from the customer:
+    -   Baseline revenue is given as: $y_0 = 10$
+    -   Revenue is increased for 'premium' customers as $y_1 = y_0 + 0.5$
+    -   A non-linear age effect is added to the baseline for customers between 30 and 50 years old ($0.1$)
+    -   A second non-linear age effect is added for 'treated' customers between 35 and 45 years old ($0.3$)
+
 The true process is shown by the lines in the figure below. Note that the effect is constant for most of the age range (i.e. the distance between the lines is the same), but increases between 35 and 45 years by 0.3:
 
-![True process for example 1](images/week11_2.png) 
+![True process for example 1](images/week11_2.png)
 
-The *effect* can be shown as the difference between these two lines (note the non-linearity). It's this that we'll be trying to model in this section. 
+The *effect* can be shown as the difference between these two lines (note the non-linearity). It's this that we'll be trying to model in this section.
 
-![Effect for example 1](images/week11_3.png) 
+![Effect for example 1](images/week11_3.png)
 
 We can estimate this using the equation given above (this will be useful for plotting results):
 
@@ -88,7 +91,16 @@ We can estimate this using the equation given above (this will be useful for plo
 # R
 
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+X_test = seq(20, 60, 0.1)
+effect_test = rep(0.5, length(X_test))
+effect_test = ifelse(X_test > 35 & X_test < 45, effect_test + 0.3, effect_test)
+
+df_test = data.frame(age = X_test, effect_test)
+
+ggplot(df_test, aes(x = age, y = effect_test)) +
+  geom_line() +
+  theme_bw()
+
 ```
 
 # Python
@@ -99,9 +111,7 @@ effect_test = [0.5]*len(X_test)
 effect_test = effect_test + 0.3*(35<X_test)*(X_test<45)
 plt.plot(X_test, effect_test)
 ```
-
 :::
-
 
 ::: {.panel-tabset group="language"}
 # R
@@ -133,7 +143,6 @@ sns.pairplot(df)
 ```
 :::
 
-
 As a baseline, let's fit a linear model to these data. To account for the non-constant effect of `age`, we can treat this as a moderator, with an interaction with the treatment (`premium`):
 
 ::: {.panel-tabset group="language"}
@@ -153,7 +162,7 @@ linear_model.summary().tables[1]
 ```
 :::
 
-The results show a significant treatment effect, but no significance with either `age` or the interaction term. This is fairly understandable: there is no linear trend with age (just the offset for 35 to 45), nor is there any difference in the trends that are fit. 
+The results show a significant treatment effect, but no significance with either `age` or the interaction term. This is fairly understandable: there is no linear trend with age (just the offset for 35 to 45), nor is there any difference in the trends that are fit.
 
 We can visualize these to show these results: note that there's a fairly large distance between the lines (the `premium` effect), but no real difference in slope:
 
@@ -180,18 +189,42 @@ sns.lineplot(data=df, x='age', y='mu1_hat', label='$\mu_1$')
 
 ### S-learner
 
-We'll start by fitting a S-learner model. This is the simplest of the causal ML methods, and uses a single ML model, but with the treatment variable included as one of the predictive features. 
+We'll start by fitting a S-learner model. This is the simplest of the causal ML methods, and uses a single ML model, but with the treatment variable included as one of the predictive features.
 
 ::: {.panel-tabset group="language"}
 # R
 
+In R, we can fit this by simply using a decision tree from **rpart**:
+
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+s_learner = rpart(revenue ~ age + premium, 
+                  df, control = rpart.control(cp = 0.03))
+```
+
+We can use this to then predict the estimated values for each observation for both scenarios (`premium = True`, `premium = False`):
+
+```{r warning=FALSE, message=FALSE}
+df0 <- df %>% 
+  arrange(age)
+df0$premium <- 'False'
+df0$yhat <- predict(s_learner, df0)
+
+df1 <- df %>% 
+  arrange(age)
+df1$premium <- 'True'
+df1$yhat <- predict(s_learner, df1)
+```
+
+And this can then be used to estimate the CATE and ATE:
+
+```{r warning=FALSE, message=FALSE}
+cate_est = df1$yhat - df0$yhat
+print(paste("ATE:", round(mean(cate_est), 2)))
 ```
 
 # Python
 
-In Python, we need to first one-hot encode the `premium` variable, then extract the relevant data. 
+In Python, we need to first one-hot encode the `premium` variable, then extract the relevant data.
 
 ```{python}
 df2 = pd.get_dummies(df, columns=['premium'], drop_first=True, dtype=int)
@@ -230,7 +263,17 @@ Now we can visualize the results as the effect (the predicted difference between
 # R
 
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+df_test$premium <- 'False'
+df_test$yhat0 <- predict(s_learner, df_test)
+df_test$premium <- 'True'
+df_test$yhat1 <- predict(s_learner, df_test)
+
+df_test$effect_pred <- df_test$yhat1 - df_test$yhat0
+
+ggplot(df_test, aes(x = age)) +
+  geom_line(aes(y = effect_test), size = 2, col = 'blue') +
+  geom_line(aes(y = effect_pred), size = 2, col = 'red') +
+  theme_bw()
 ```
 
 # Python
@@ -243,10 +286,9 @@ plt.plot(X_test, y_test_s_effect, label="S-Learner (DT)")
 plt.legend()
 plt.show()
 ```
-
 :::
 
-Here you can see that the decision tree has picked up on the age effect in the non-treated customers, but not in the treated one. This is due to the imbalanced dataset: there are large difference in the number of customers between the two groups. 
+Here you can see that the decision tree has picked up on the age effect in the non-treated customers, but not in the treated one. This is due to the imbalanced dataset: there are large difference in the number of customers between the two groups.
 
 We'll try to improve on this below by using a different learner. But first, let's see what the effect is of using a different algorithm, by using a random forest:
 
@@ -254,7 +296,39 @@ We'll try to improve on this below by using a different learner. But first, let'
 # R
 
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+my_features = c("age", "premium")
+s_learner = ranger(y = df$revenue, 
+                   x = df[, my_features], 
+                   keep.inbag = TRUE)
+```
+
+```{r}
+df0 <- df %>% 
+  arrange(age)
+df0$premium <- 'False'
+df0$yhat <- predict(s_learner, df0)$prediction
+
+df1 <- df %>% 
+  arrange(age)
+df1$premium <- 'True'
+df1$yhat <- predict(s_learner, df1)$prediction
+
+ate_est = mean(df1$yhat - df0$yhat)
+print(paste("ATE:", round(ate_est, 2)))
+```
+
+```{r warning=FALSE, message=FALSE}
+df_test$premium <- 'False'
+df_test$yhat0 <- predict(s_learner, df_test)$prediction
+df_test$premium <- 'True'
+df_test$yhat1 <- predict(s_learner, df_test)$prediction
+
+df_test$effect_pred <- df_test$yhat1 - df_test$yhat0
+
+ggplot(df_test, aes(x = age)) +
+  geom_line(aes(y = effect_test), size = 2, col = 'blue') +
+  geom_line(aes(y = effect_pred), size = 2, col = 'red') +
+  theme_bw()
 ```
 
 # Python
@@ -276,17 +350,59 @@ plt.show()
 ```
 :::
 
-This does a better overall job at capturing the effect. There's some noise, particularly in the younger and older ages. Tuning the random forest, or using a different algorithm may help to reduce this. 
+This does a better overall job at capturing the effect. There's some noise, particularly in the younger and older ages. Tuning the random forest, or using a different algorithm may help to reduce this.
 
 ### T-learner
 
-The T-learner uses two different models: one for the controls, one for the treatment. This can avoid some of the issues with the S-learner, particularly when one of the groups is sparse.Unlike the S-learner, the treatment variable is not used to fit the model, but to split the data. This allows a greater amount of flexibility as different algorithms can be used for the two groups. Here we'll start with a simple decision tree for each model. 
+The T-learner uses two different models: one for the controls, one for the treatment. This can avoid some of the issues with the S-learner, particularly when one of the groups is sparse.Unlike the S-learner, the treatment variable is not used to fit the model, but to split the data. This allows a greater amount of flexibility as different algorithms can be used for the two groups. Here we'll start with a simple decision tree for each model.
 
 ::: {.panel-tabset group="language"}
 # R
 
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+df0t <- df %>%
+  filter(premium == 'False') %>%
+  select("age", "revenue")
+df1t <- df %>%
+  filter(premium == 'True') %>%
+  select("age", "revenue")
+```
+
+```{r}
+t_learner0 = rpart(revenue ~ age, 
+                   df0t, control = rpart.control(cp = 0.03))
+
+t_learner1 = rpart(revenue ~ age, 
+                   df1t, control = rpart.control(cp = 0.03))
+
+## Get CATE
+df0 <- df %>% 
+  arrange(age)
+df0$premium <- 'False'
+df0$yhat <- predict(t_learner0, df0)
+
+df1 <- df %>% 
+  arrange(age)
+df1$premium <- 'True'
+df1$yhat <- predict(t_learner1, df1)
+
+ate_est = mean(df1$yhat - df0$yhat)
+print(paste("ATE:", round(ate_est, 2)))
+```
+
+```{r}
+## Plot effect
+df_test$premium <- 'False'
+df_test$yhat0 <- predict(t_learner0, df_test)
+df_test$premium <- 'True'
+df_test$yhat1 <- predict(t_learner1, df_test)
+
+df_test$effect_pred <- df_test$yhat1 - df_test$yhat0
+
+ggplot(df_test, aes(x = age)) +
+  geom_line(aes(y = effect_test), size = 2, col = 'blue') +
+  geom_line(aes(y = effect_pred), size = 2, col = 'red') +
+  theme_bw()
 ```
 
 # Python
@@ -309,15 +425,46 @@ plt.show()
 ```
 :::
 
-This is much better fit than the equivalent S-learner. By splitting the data, the model is not imbalanced towards the control group. It's a little noisy compared to the true effect, but this could be fixed by reducing the complexity of the decision trees or by replacing one of the trees with a simpler algorithm. 
+This is much better fit than the equivalent S-learner. By splitting the data, the model is not imbalanced towards the control group. It's a little noisy compared to the true effect, but this could be fixed by reducing the complexity of the decision trees or by replacing one of the trees with a simpler algorithm.
 
-To illustrate this last point, we'll refit the learner with a learned for the first model (the control group) and a random forest for the second (the treatment group):
+To illustrate this last point, we'll refit the learner with a linear model for the first model (the control group) and a random forest for the second (the treatment group):
 
 ::: {.panel-tabset group="language"}
 # R
 
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+t_learner0 = lm(revenue ~ age, df0)
+
+t_learner1 = ranger(revenue ~ age, df1t, 
+                    keep.inbag = TRUE, 
+                    importance = "permutation")
+
+df0 <- df %>% 
+  arrange(age)
+df0$premium <- 'False'
+df0$yhat <- predict(t_learner0, df0)
+
+df1 <- df %>% 
+  arrange(age)
+df1$premium <- 'True'
+df1$yhat <- predict(t_learner1, df1)$prediction
+
+ate_est = mean(df1$yhat - df0$yhat)
+print(paste("ATE:", round(ate_est, 2)))
+```
+
+```{r}
+df_test$premium <- 'False'
+df_test$yhat0 <- predict(t_learner0, df_test)
+df_test$premium <- 'True'
+df_test$yhat1 <- predict(t_learner1, df_test)$prediction
+
+df_test$effect_pred <- df_test$yhat1 - df_test$yhat0
+
+ggplot(df_test, aes(x = age)) +
+  geom_line(aes(y = effect_test), size = 2, col = 'blue') +
+  geom_line(aes(y = effect_pred), size = 2, col = 'red') +
+  theme_bw()
 ```
 
 # Python
@@ -347,14 +494,22 @@ Note that you can access the individual models within the learner. This means th
 ::: {.panel-tabset group="language"}
 # R
 
+To get the feature importance from the outcome model (the random forest) in the T-learner:
+
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+t_learner1$variable.importance
+```
+
+And you can plot the partial dependency on `age` (the only feature) with:
+
+```{r warning=FALSE, message=FALSE}
+library(pdp)
+partial(t_learner1, "age", plot = TRUE)
 ```
 
 # Python
 
-To get the feature importance from the treatment model (the random forest) in the T-learner:
-
+To get the feature importance from the outcome model (the random forest) in the T-learner:
 
 ```{python}
 t_learner.models[1].feature_importances_
@@ -366,27 +521,41 @@ And you can plot the partial dependency on `age` (the only feature) with:
 from sklearn.inspection import PartialDependenceDisplay
 PartialDependenceDisplay.from_estimator(t_learner.models[1], X.reshape(-1,1), [0])
 ```
-
 :::
-
 
 ## Causal Forests
 
 We'll next look at causal forests. These are modifications of random forests designed to best estimate the CATE (the individual or heterogenous treatment effect). As a result, they have a few differences with a traditional RF model:
 
-- All tree splits are chosen to maximize the difference in the treatment effect, not the error against the observed value. In other words, each split divides between a control and treated group, and the value of the split corresponds to the largest difference in the outcome between these groups
-- The forests are *honest*: the splitting and the calculation of the difference in effect are carried out using two subsets of data
-- The forests usually include cross-fitting: the subsets for splitting and testing are reversed, and the models are averaged
+-   All tree splits are chosen to maximize the difference in the treatment effect, not the error against the observed value. In other words, each split divides between a control and treated group, and the value of the split corresponds to the largest difference in the outcome between these groups
+-   The forests are *honest*: the splitting and the calculation of the difference in effect are carried out using two subsets of data
+-   The forests usually include cross-fitting: the subsets for splitting and testing are reversed, and the models are averaged
 
 These models have a number of theoretical advantages: they are unbiased estimators and they can be used to generate confidence intervals around the estimated effects
 
-We'll fit one here using the same dataset as in the meta-learner section. 
+We'll fit one here using the same dataset as in the meta-learner section.
 
 ::: {.panel-tabset group="language"}
 # R
 
+In R, the **grf** library provides a function to fit causal forests:
+
 ```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+library(grf)
+X = as.matrix(df[, "age"])
+Y = as.matrix(df[, "revenue"])
+W = ifelse(df[, "premium"] == "True", 1, 0)
+cf = causal_forest(X, Y, W)
+```
+
+The CATE values can be extracted with `predict()`. To get the ATE:
+
+```{r warning=FALSE, message=FALSE}
+X_test_df = data.frame(age = X_test)
+df_test$effect_cf = predict(cf, data.frame(age = df_test[,"age"]))$prediction
+
+ate_est = mean(df_test$effect_cf)
+print(paste("ATE:", round(ate_est, 2)))
 ```
 
 # Python
@@ -405,16 +574,18 @@ The CATE values can be extracted with `predict()`. To get the ATE:
 ```{python}
 cf.predict(X.reshape(-1, 1)).mean()
 ```
-
 :::
 
-And the effect can be visualized as before. The results here are smoother than the meta-learners. This is largely a result of the averaging through cross-fitting:
+And the effect can be visualized as before. The change in effect is weaker than the meta-learners. These forests generally work better with a larger number of features (we only have one here). The smoothing is largely a result of the averaging through cross-fitting.
 
 ::: {.panel-tabset group="language"}
 # R
 
-```{r warning=FALSE, message=FALSE}
-print("Goodbye cruel world")
+```{r}
+ggplot(df_test, aes(x = age)) +
+  geom_line(aes(y = effect_test), size = 2, col = 'blue') +
+  geom_line(aes(y = effect_cf), size = 2, col = 'red') +
+  theme_bw()
 ```
 
 # Python
@@ -427,61 +598,38 @@ plt.plot(X_test, y_test_cf_effect, label="Causal Forest")
 plt.legend()
 plt.show()
 ```
-
 :::
 
 ## Double machine learning
 
 Double machine learning is a newer approach to causal ML. It is based around the Frisch-Waugh-Lovell theorem: that the effect of a variable on an outcome can be obtained through a regression based on residuals. This takes place as a series of steps:
 
-- Build a model ($mod_T$) of the treatment ($T$) as a function of all confounders
-- Calculate the residuals from this model ($\widetilde{T}$)
-- Build a model ($mod_Y$) of the outcome ($Y$) as a function of all confounders
-- Calculate the residuals from this model ($\widetilde{Y}$)
-- Build a model of the outcome residuals as a function of the treatment residuals ($\widetilde{Y} \sim \widetilde{T}$)
+-   Build a model ($mod_T$) of the treatment ($T$) as a function of all confounders
+-   Calculate the residuals from this model ($\widetilde{T}$)
+-   Build a model ($mod_Y$) of the outcome ($Y$) as a function of all confounders
+-   Calculate the residuals from this model ($\widetilde{Y}$)
+-   Build a model of the outcome residuals as a function of the treatment residuals ($\widetilde{Y} \sim \widetilde{T}$)
 
 The coefficient from this last model gives the debiased or orthogonal effect.
 
 ### Example data
 
-The dataset we'll use is in *week11_ex3.csv*. This is another synthetic dataset designed to represent a marketing study, in which incentives are offered to customers to increase their purchases. In this, the outcome is the value of a customers order, and the treatment is whether or not they were offered the incentive in a pilot study. 
+The dataset we'll use is in *week11_ex3.csv*. This is another synthetic dataset designed to represent a marketing study, in which incentives are offered to customers to increase their purchases. In this, the outcome is the value of a customers order, and the treatment is whether or not they were offered the incentive in a pilot study.
 
 The value of sales is related to these variables through the following equation (the names of the variables can be found in the appendix). Note that there are several non-linearities imposed in this equation that will impact the ability to estimate causal effects with linear models. The coefficient $\tau$ is the effect from the treatment, which is set to $\tau = 0.75$
 
 $$
 y = sin(\pi \cdot x1 \cdot x2) + 2(x3 - 0.5)^2 + x4 + 0.5 \cdot x5 + x6 \cdot x7 + x8^3 + sin(\pi \cdot x9 \cdot x10) + \tau T + \epsilon
-$$
+$$ 
+
 Let's start by reading the data:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-df = read.csv("./data/week11_ex3.csv")
-head(df)
-```
-
-# Python
 
 ```{python}
 df = pd.read_csv("./data/week11_ex3.csv")
 df.head()
 ```
-:::
 
-If oyu plot out any of the data, you'll see that it is quite noisy, but there are weakly perceptible relationships between the outcome and confounders:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-ggplot(df, aes(x = x01, y = y)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth() +
-  theme_bw()
-```
-
-# Python
+If you plot out any of the data, you'll see that it is quite noisy, but there are weakly perceptible relationships between the outcome and confounders:
 
 ```{python}
 sns.regplot(df, x='x01', y='y', 
@@ -489,372 +637,3 @@ sns.regplot(df, x='x01', y='y',
   scatter_kws={"color": "black", "alpha": 0.3}, 
   line_kws={"color": "blue"})
 ```
-:::
-
-Just to illustrate the potential bias with non-linear confounders, we'll start by building a simple regression model that includes all `x` varaibles:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-my_formula = 'y ~ x01 + x02 + x03 + x04 + x05 + x06 + x07 + x08 + x09 + x10 + T'
-fit = lm(my_formula, df)
-# Extract the treatment coefficient
-ate_lr = round(coef(fit)["T"], 2)
-print(paste('The average treatment effect using Linear Regression is:', ate_lr))
-```
-
-# Python
-
-```{python}
-my_formula = 'y ~ x01 + x02 + x03 + x04 + x05 + x06 + x07 + x08 + x09 + x10 + T'
-mod = smf.ols(formula=my_formula, data=df)
-fit = mod.fit()
-# Extract the treatment coefficient
-ate_lr = round(fit.params['T'], 2)
-print(f'The average treatment effect using Linear Regression is: {ate_lr}')
-```
-:::
-
-### Linear DML
-
-Let's now train a linear double machine learning model. 
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-In Python, we use `LinearDML` from **EconML**. This function requires that we specify the algorithms for the two ML models:
-
-- `model_t`: the model for the treatment
-- `model_y`: the model for the outcome
-
-Here, we'll use the lightweight implementation of gradient boosted trees from **lightgbm** for speed (note that you can use all the scikit-learn algorithms here as well). We need to use the classifier for the treatment as it is a binary outcome, and the regressor for the outcome (sales). Once loaded, we then instantiate the model:
-
-```{python}
-from econml.dml import LinearDML
-from lightgbm import LGBMRegressor, LGBMClassifier
-
-dml = LinearDML(model_y=LGBMRegressor(verbose=-1), 
-                model_t=LGBMClassifier(verbose=-1), 
-                discrete_treatment=True)
-```
-
-Next extract the values into numpy arrays:
-
-```{python}
-features = ['x01', 'x02', 'x03', 'x04', 'x05', 'x06', 'x07', 'x08', 'x09', 'x10']
-X = df[features].to_numpy()
-y = df['y'].to_numpy()
-T = df['T'].to_numpy()
-```
-
-And now let's fit the model. The syntax here  indicates to use all variables as confounders (`W=X`) and none of the variables to model the effect. This will result in a constant, homogenous effect, with no variation across observations.
-
-```{python}
-dml.fit(y, T=T, X=None, W=X)
-```
-
-:::
-
-With that done, we can explore the model results:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-Here's the ATE. This should be much closer to the true values (0.75) than the simple linear model
-
-```{python}
-dml.ate()
-```
-
-We can also access the individual models. For the treatment model (note that there will be more than one model from internal cross validation):
-
-```{python}
-mod_t = dml.models_t[0][0]
-```
-
-And the outcome model:
-
-```{python}
-mod_y = dml.models_y[0][0]
-```
-
-As these are regular Python models, we can extract and plot the feature importance:
-
-```{python}
-importances = mod_y.feature_importances_
-indices = np.argsort(importances)[::-1]
-vip_df = pd.DataFrame({'feature': df.columns[0:10][indices],
-                   'importance': importances[indices]})
-sns.barplot(vip_df, x = 'importance', y = 'feature')
-```
-
-Or partial dependencies. Here, for example, is the partial dependency of the treatment on `X01`:
-
-```{python}
-PartialDependenceDisplay.from_estimator(mod_t, X, [0])
-```
-
-And the partial dependency of the outcome on `X01`:
-
-```{python}
-PartialDependenceDisplay.from_estimator(mod_y, X, [0])
-```
-:::
-
-### DML with heterogenous treatment
-
-The previous model assumed that the effect (once debiased) is constant across all observations. We can adjust that by using the features to model variations in the treatment effect ($\tau$). This changes the final model in the DML series (the regression of residuals) to:
-
-$$
-\widetilde{Y} \sim \widetilde{T} + X
-$$
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-In Python, we simply have to set `X=X`: 
-
-```{python}
-dml = LinearDML(model_y=LGBMRegressor(verbose=-1), 
-                model_t=LGBMClassifier(verbose=-1), 
-                discrete_treatment=True)
-dml.fit(y, T=T, X=X, W=X)
-```
-
-Here's the new ATE (should still be relatively unbiased):
-
-```{python}
-round(dml.ate(X=X), 2)
-```
-
-:::
-
-We'll illustrate the effect quickly here, by plotting the individual effects (CATE) against the values for the first variable (`X01`), which shows a small decline in effect at high values (note that this is just an effect of the randomness in the synthetic data, as no trend was added when the data was produced)
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-```{python}
-df['eff'] = dml.effect(X=X)
-sns.regplot(df, x='x01', y='eff',
-                 scatter_kws={"color": "black", "alpha": 0.3}, 
-                 line_kws={"color": "red"})
-```
-
-:::
-
-Note that all the extra interpretation can still be applied to this model.
-
-### Causal Forest DML 
-
-In the previous step, we went from a homogeneous treatment effect to a heterogeneous effect. As that model retains a linear estimate in the final stage, the only possible variation is linear and monotonic. For more complex CATE estimates, we can replace this final stage with a non-parametric estimator, for example, a causal forest. 
-
-We'll use another dataset here (*week11_4.csv*). This has a similar design to the previous set, with 10 features as potential confounders (`X01` to `X10`), one binary treatment (`T`) and an outcome (`y`). The main difference is that the treatment variable depends on the first confounder. Where `X01` is below zero, the treatment effect is zero, and then it scales linearly at $X_{01} > 0$
-
-![True effect for example 4](images/week11_4.png) 
-
-You can visualize the true effect as follows:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-```{python}
-X0_test = np.linspace(-2, 2, 100)
-effect_test = X0_test.copy()
-effect_test[X0_test < 0] = 0
-```
-
-```{python}
-plt.plot(X0_test, effect_test)
-```
-:::
-
-Let's get the data
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-```{python}
-df = pd.read_csv("./data/week11_ex4.csv")
-df.head()
-```
-
-And convert to numpy arrays:
-
-```{python}
-features = ['x01', 'x02', 'x03', 'x04', 'x05', 'x06', 'x07', 'x08', 'x09', 'x10']
-X = df[features].to_numpy()
-y = df['y'].to_numpy()
-T = df['T'].to_numpy()
-```
-:::
-
-Before estimating this with a causal forest, we'll use a linear DML model:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-We'll use `LinearDML` again to fit this. The main difference is that we'll allow the function to automatically choose the best algorithm between linear and forest approaches for the treatment and outcome model:
-
-```{python}
-dml = LinearDML(model_y='auto', 
-                model_t='auto', 
-                discrete_treatment=True)
-dml.fit(y, T=T, X=X, W=X)
-```
-:::
-
-And let's plot the effect:
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-```{python}
-X_test = np.zeros((100, 10))
-X_test[:, 0] = np.linspace(-2, 2, 100)
-```
-
-```{python}
-y_pred_dml = dml.effect(X_test)
-
-plt.plot(X0_test, effect_test, label="Truth")
-plt.plot(X_test[:,0], y_pred_dml, label="DML")
-plt.legend()
-plt.show()
-```
-:::
-
-Now let's fit the causal forest
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-The **EconML** library contains a function for double machine learning with a causal forest. The syntax is pretty much the same as the linear DML. We'll again use the automatic choice of first stage models.
-
-```{python}
-from econml.dml import CausalForestDML
-cfdml = CausalForestDML(model_t='auto',
-                        model_y='auto',
-                        discrete_treatment=True)
-cfdml.fit(y, T, X=X, W=X)
-```
-:::
-
-And compare the modeled effect. 
-
-::: {.panel-tabset group="language"}
-# R
-
-```{r}
-print("Blah blah blah")
-```
-
-# Python
-
-We'll extract both the effect and confidence interval for this final plot:
-
-```{python}
-y_pred_dml = cfdml.effect(X_test)
-lb, ub = cfdml.effect_interval(X_test, alpha=0.01)
-```
-
-```{python}
-plt.plot(X0_test, effect_test, label="Truth")
-plt.plot(X0_test, y_pred_dml, label="DML")
-plt.fill_between(X0_test, lb, ub, alpha=.4, label='CI')
-plt.legend()
-plt.show()
-```
-
-:::
-
-# Appendix: Data files
-
-## Example 1 *week11_ex1.csv*
-
-| Column header | Variable                                   |
-|---------------|--------------------------------------------|
-| revenue        | Client revenue ($000s) |
-| premium      | Was client offered premium service [0,1] |
-| age   | Client age |
-
-## Example 3 *week11_ex3.csv*
-
-| Column header | Variable                                   |
-|----------|-----------|
-| x01 | days_since_last_order | 
-| x02 | order_count_last_7_days | 
-| x03 | order_count_last_30_days | 
-| x04 | order_count_last_180_days | 
-| x05 | order_value_last_7_days | 
-| x06 | order_value_last_30_days | 
-| x07 | order_value_last_180_days | 
-| x08| age | 
-| x09| gender | 
-| x10| city | 
-| T| Treatment | 
-| y| Sales | 
-
-## Example 4 *week11_ex4.csv*
-
-| Column header | Variable                                   |
-|----------|-----------|
-| x01-x10 | Confounders | 
-| T| Treatment | 
-| y| Sales | 
-
