@@ -42,6 +42,7 @@ Often in scientific studies we are interested in establishing a cause and effect
     - [Lab notes][lab10]
 - Week 11
     - [Lab notes][lab11]
+    - [DML notebook][wk11_nb]
 
 # Data
 
@@ -52,8 +53,8 @@ Often in scientific studies we are interested in establishing a cause and effect
 - Travis and Grace data set ([travis.csv][travis])
 - Travel survey data ([survey.txt][survey])
 - Week 11 example 1  ([week11_ex1.csv][wk11_1])
-- Week 11 example 3  ([week11_ex4.csv][wk11_3])
-- Week 11 example 4  ([week11_ex5.csv][wk11_4])
+- Week 11 example 3  ([week11_ex3.csv][wk11_3])
+- Week 11 example 4  ([week11_ex4.csv][wk11_4])
 
 [lab2]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week2.html
 [lab3]: https://simonbrewer.github.io/geog6960_causal/GEOG6960_Week3.html
@@ -74,3 +75,5 @@ Often in scientific studies we are interested in establishing a cause and effect
 [wk11_1]: https://drive.google.com/file/d/1QVHGP-JLc0BDdrqqhKe3AT_Y4qfkh3Ce/view?usp=sharing
 [wk11_3]: https://drive.google.com/file/d/19IE2XiJ2wwAH9la3YPlh2llWu-Gs6Zar/view?usp=sharing
 [wk11_4]: https://drive.google.com/file/d/1DLxuAJgvnG0PcQwqD-nDD_JLiH7kT75B/view?usp=sharing
+
+[wk11_nb]: https://github.com/simonbrewer/geog6960_causal/blob/main/GEOG6960_Week11_2.ipynb
